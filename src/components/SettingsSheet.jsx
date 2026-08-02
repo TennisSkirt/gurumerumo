@@ -1,12 +1,14 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { AVATAR_CHOICES } from '../lib/members.js'
 import { faceRoundSrc } from '../lib/asset.js'
+import { storageUsage, fmtBytes, fmtPct } from '../lib/usage.js'
 import { UiIcon } from './Icon.jsx'
 import { useSheetDrag } from '../lib/useSheetDrag.js'
 import { usePlaces } from '../store/PlacesContext.jsx'
 
 export default function SettingsSheet({ onClose }) {
-  const { members, saveMembers, newMemberId, familyCode, cloud, leaveFamily, lang, setLang, t } = usePlaces()
+  const { places, members, saveMembers, newMemberId, familyCode, cloud, leaveFamily, lang, setLang, t } = usePlaces()
+  const usage = useMemo(() => storageUsage(places), [places])
   const { dragProps, sheetStyle } = useSheetDrag(onClose)
   const [draft, setDraft] = useState(() => members.map((m) => ({ ...m })))
   const [saving, setSaving] = useState(false)
@@ -41,6 +43,52 @@ export default function SettingsSheet({ onClose }) {
             <button className={'lang-opt' + (lang === 'ja' ? ' on' : '')} onClick={() => setLang('ja')}>日本語</button>
           </div>
         </div>
+
+        {cloud && (
+          <div className="set-section">
+            <div className="set-section__head">
+              <span>{t('저장 공간 (Firebase)', 'ストレージ（Firebase）')}</span>
+              <span className={'usage-chip usage-chip--' + usage.level}>
+                {usage.level === 'ok' ? t('여유', '余裕') : usage.level === 'warn' ? t('주의', '注意') : t('경고', '警告')}
+              </span>
+            </div>
+            <div className="usage">
+              <div className="usage__row">
+                <b>{t(`사진 ${usage.photos}장`, `写真 ${usage.photos}枚`)} · {t(`기록 ${usage.count}곳`, `記録 ${usage.count}件`)}</b>
+                <span>{fmtBytes(usage.total)} <em>/ 1 GB</em></span>
+              </div>
+              <div className="usage__bar">
+                <span className={'usage__fill usage__fill--' + usage.level} style={{ width: `${Math.min(100, Math.max(1.5, usage.freePct * 100))}%` }} />
+              </div>
+              <p className="usage__note">
+                {t(`무료 저장 한도의 약 ${fmtPct(usage.freePct)}를 쓰고 있어요.`, `無料ストレージの約 ${fmtPct(usage.freePct)} を使用中です。`)}
+                {' '}
+                {usage.nearFree
+                  ? t('한도에 가까워요 — 오래된 사진을 정리해보세요.', '上限に近づいています — 古い写真を整理しましょう。')
+                  : t('아직 아주 넉넉해서 요금 걱정은 없어요.', 'まだ十分に余裕があり、料金の心配はありません。')}
+              </p>
+
+              {usage.largest && (
+                <div className="usage__doc">
+                  <div className="usage__row usage__row--sm">
+                    <span>{t('가장 큰 기록', '最大の記録')}: <b>{usage.largest.name}</b></span>
+                    <span>{fmtBytes(usage.largestSize)} <em>/ 1 MB</em></span>
+                  </div>
+                  <div className="usage__bar usage__bar--sm">
+                    <span className={'usage__fill usage__fill--' + (usage.nearDoc ? 'danger' : usage.largestPct >= 0.5 ? 'warn' : 'ok')} style={{ width: `${Math.min(100, Math.max(2, usage.largestPct * 100))}%` }} />
+                  </div>
+                  {usage.nearDoc && (
+                    <p className="usage__warn">⚠️ {t('이 기록은 사진이 많아 한 기록 한도(1MB)에 곧 닿아요. 사진을 줄이거나 새 기록으로 나눠주세요.', 'この記録は写真が多く、1記録の上限(1MB)に近づいています。写真を減らすか、記録を分けてください。')}</p>
+                  )}
+                </div>
+              )}
+
+              <p className="hint-sm">
+                {t('사진은 Firebase(Firestore)에 저장돼요. 위 숫자는 앱이 계산한 추정치이고, 실제 요금 초과 여부는 설정해둔 예산 알림 메일이 정확해요.', '写真は Firebase(Firestore) に保存されます。上の数値はアプリの推定値で、実際の超過はメールの予算アラートが正確です。')}
+              </p>
+            </div>
+          </div>
+        )}
 
         <div className="set-section">
           <div className="set-section__head">

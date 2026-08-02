@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import MapView from './components/MapView.jsx'
 import RecordForm from './components/RecordForm.jsx'
 import PlaceList from './components/PlaceList.jsx'
@@ -9,6 +9,7 @@ import SettingsSheet from './components/SettingsSheet.jsx'
 import Splash from './components/Splash.jsx'
 import { UiIcon } from './components/Icon.jsx'
 import { tabIconSrc, characterSrc } from './lib/asset.js'
+import { storageUsage } from './lib/usage.js'
 import { usePlaces } from './store/PlacesContext.jsx'
 
 const TABS = [
@@ -19,7 +20,8 @@ const TABS = [
 ]
 
 export default function App() {
-  const { firebaseReady, familyCode, t } = usePlaces()
+  const { firebaseReady, familyCode, cloud, places, t } = usePlaces()
+  const storageWarn = useMemo(() => (cloud ? storageUsage(places).warn : false), [cloud, places])
   const [splashDone, setSplashDone] = useState(false)
   const [tab, setTab] = useState('map')
   const [selected, setSelected] = useState(null)
@@ -36,6 +38,7 @@ export default function App() {
         <span className="topbar__logo">ぐるめるも</span>
         <button className="topbar__gear" onClick={() => setShowSettings(true)} aria-label="설정">
           <UiIcon name="gear" size={20} />
+          {storageWarn && <span className="warn-dot" aria-hidden="true" />}
         </button>
       </header>
 

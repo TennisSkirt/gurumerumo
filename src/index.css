@@ -298,6 +298,33 @@ button.star { padding: 4px 5px; cursor: pointer; }  /* 입력용 별: 탭 영역
 .set-section { margin-bottom: 20px; }
 .set-section__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
 .set-section__head span { font-weight: 700; }
+
+/* 저장 공간 미터 */
+.usage { background: var(--card); border: 1.5px solid var(--line); border-radius: 14px; padding: 14px; }
+.usage__row { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; font-size: 15px; margin-bottom: 8px; }
+.usage__row b { font-weight: 700; }
+.usage__row span em { color: var(--ink-soft); font-style: normal; font-size: 13px; }
+.usage__row--sm { font-size: 13px; margin-bottom: 6px; }
+.usage__row--sm b { color: var(--ink); }
+.usage__row--sm > span:first-child { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.usage__row--sm > span:last-child { flex: none; white-space: nowrap; }
+.usage__bar { height: 10px; border-radius: 999px; background: #f0e6dc; overflow: hidden; }
+.usage__bar--sm { height: 7px; }
+.usage__fill { display: block; height: 100%; border-radius: 999px; transition: width .3s ease; }
+.usage__fill--ok { background: #57ab6a; }
+.usage__fill--warn { background: #e6a13c; }
+.usage__fill--danger { background: var(--brand); }
+.usage__note { font-size: 13px; color: var(--ink-soft); margin: 8px 0 0; line-height: 1.5; }
+.usage__doc { margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--line); }
+.usage__warn { font-size: 13px; color: var(--brand); font-weight: 700; margin: 7px 0 0; line-height: 1.45; }
+.usage .hint-sm { margin-top: 10px; }
+.usage-chip { font-size: 12px; font-weight: 700; border-radius: 999px; padding: 3px 10px; }
+.usage-chip--ok { background: #e3f2e6; color: #3f8a52; }
+.usage-chip--warn { background: #fbeccf; color: #b9791f; }
+.usage-chip--danger { background: var(--brand-soft); color: var(--brand); }
+
+/* 설정 아이콘 경고 점 (.topbar__gear 는 이미 position:absolute) */
+.warn-dot { position: absolute; top: 2px; right: 2px; width: 10px; height: 10px; border-radius: 50%; background: #ffd23c; border: 2px solid var(--brand); }
 .add-member { border: 1.5px solid var(--brand); background: var(--brand-soft); color: var(--brand); border-radius: 999px; padding: 6px 12px; font-size: 13px; font-weight: 700; }
 .member-edit-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .member-edit { display: flex; align-items: center; gap: 8px; }

@@ -252,9 +252,10 @@ button.star { padding: 4px 5px; cursor: pointer; }  /* 입력용 별: 탭 영역
 .visit__memo { margin: 5px 0; font-size: 14px; color: var(--ink); white-space: pre-wrap; }
 .visit__who { font-size: 12px; color: var(--ink-soft); }
 .visit-badge { color: var(--brand); font-weight: 700; }
-.visit-form { background: var(--brand-soft); border-radius: 14px; padding: 6px 0 12px; margin-bottom: 12px; }
-.visit-form .field { margin: 0 14px 12px; }
-.visit-form .sheet__actions { margin: 0 14px; }
+.visit-form { background: var(--brand-soft); border: 1.5px solid #f7cdb8; border-radius: 14px; padding: 14px; margin-bottom: 12px; }
+.visit-form .field { margin: 0 0 14px; }
+.visit-form .field:last-of-type { margin-bottom: 14px; }
+.visit-form .sheet__actions { margin: 0; }
 .visit--editing { padding: 0; border: none; background: none; }
 
 /* 사진 여러 장 미리보기 그리드 */

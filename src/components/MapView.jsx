@@ -3,7 +3,7 @@ import { Map, useMap, useApiIsLoaded } from '@vis.gl/react-google-maps'
 import { MarkerClusterer } from '@googlemaps/markerclusterer'
 import { categoryOf } from '../lib/categories.js'
 import { placePhoto, placeParticipants } from '../lib/places.js'
-import { catIconSrc, faceRoundSrc, uiIconSrc } from '../lib/asset.js'
+import { catIconSrc, faceRoundSrc, uiIconSrc, characterSrc } from '../lib/asset.js'
 import { usePlaces } from '../store/PlacesContext.jsx'
 
 const SEOUL = { lat: 37.5665, lng: 126.978 }
@@ -244,7 +244,7 @@ export default function MapView({ onSelect }) {
       {places.length === 0 && (
         <div className="map-empty">
           <div className="map-empty__card">
-            <img className="map-empty__img" src={uiIconSrc('search')} alt="" width={44} height={44} />
+            <img className="map-empty__char" src={characterSrc('husband')} alt="" />
             <b>{t('아직 기록한 장소가 없어요', 'まだ記録した場所がありません')}</b>
             <p>{t('아래 기록 탭에서', '下の「記録」タブから')}<br />{t('첫 장소를 남겨보세요!', '最初の場所を残してみましょう！')}</p>
           </div>

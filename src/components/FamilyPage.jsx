@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { CATEGORIES, categoryOf } from '../lib/categories.js'
 import { visitsOf, participantsOf } from '../lib/places.js'
 import { CatIcon, MemberAvatar, UiIcon } from './Icon.jsx'
+import { characterSrc } from '../lib/asset.js'
 import { usePlaces } from '../store/PlacesContext.jsx'
 
 export default function FamilyPage({ onSelect, onOpenSettings }) {
@@ -27,6 +28,7 @@ export default function FamilyPage({ onSelect, onOpenSettings }) {
   return (
     <div className="family">
       <h2 className="screen-title">{t('우리 가족', '家族')}</h2>
+      <img className="family-hero" src={characterSrc('couple')} alt="" />
 
       <section className="panel">
         <div className="panel__title">{t('나는 누구?', 'あなたは誰？')}</div>

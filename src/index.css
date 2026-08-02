@@ -83,6 +83,14 @@ button { font-family: inherit; cursor: pointer; }
   text-align: center; box-shadow: var(--shadow); pointer-events: auto;
 }
 .map-empty__emoji { font-size: 40px; }
+.map-empty__char { width: 120px; height: auto; display: block; margin: 0 auto 4px; }
+
+/* 기록 폼 제목 옆 마스코트 */
+.title-with-mascot { justify-content: space-between; }
+.title-mascot { height: 52px; width: auto; }
+
+/* 가족 페이지 히어로 (사진 찍는 부부) */
+.family-hero { display: block; width: 160px; height: auto; margin: -4px auto 14px; }
 .map-empty__card b { display: block; margin: 8px 0 4px; }
 .map-empty__card p { margin: 0; color: var(--ink-soft); font-size: 14px; }
 

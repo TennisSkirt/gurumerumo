@@ -2,6 +2,7 @@ import { useState } from 'react'
 import LocationPicker from './LocationPicker.jsx'
 import StarRating from './StarRating.jsx'
 import { CatIcon, MemberAvatar } from './Icon.jsx'
+import { characterSrc } from '../lib/asset.js'
 import { CATEGORIES } from '../lib/categories.js'
 import { compressImage } from '../lib/image.js'
 import { usePlaces } from '../store/PlacesContext.jsx'
@@ -59,7 +60,10 @@ export default function RecordForm({ onDone }) {
 
   return (
     <form className="record" onSubmit={submit}>
-      <h2 className="screen-title">{t('새 장소 기록', '新しい場所を記録')}</h2>
+      <h2 className="screen-title title-with-mascot">
+        <span>{t('새 장소 기록', '新しい場所を記録')}</span>
+        <img className="title-mascot" src={characterSrc('wife')} alt="" />
+      </h2>
 
       <label className="field">
         <span>{t('장소 이름', '場所の名前')} *</span>

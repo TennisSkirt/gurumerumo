@@ -1,39 +1,18 @@
 import { useEffect, useRef, useState } from 'react'
-import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from 'react-leaflet'
-import L from 'leaflet'
+import { Map, Marker, useMap } from '@vis.gl/react-google-maps'
 import { searchPlaces } from '../lib/geocode.js'
 
-const SEOUL = [37.5665, 126.978]
+const SEOUL = { lat: 37.5665, lng: 126.978 }
 
-const dropIcon = L.divIcon({
-  html: '<div class="gm-drop">📍</div>',
-  className: 'gm-drop-wrap',
-  iconSize: [40, 40],
-  iconAnchor: [20, 38],
-})
-
-// 지도 클릭 → 좌표 콜백
-function ClickCatcher({ onPick }) {
-  useMapEvents({ click: (e) => onPick(e.latlng.lat, e.latlng.lng) })
-  return null
-}
-
-// 외부에서 좌표가 바뀌면 지도 이동
+// 외부에서 좌표가 바뀌면 지도 이동 (검색 결과 선택 시)
 function Recenter({ coords }) {
-  const map = useMap()
+  const map = useMap('picker')
   useEffect(() => {
-    if (coords) map.flyTo([coords.lat, coords.lng], Math.max(map.getZoom(), 15))
+    if (map && coords) {
+      map.panTo(coords)
+      map.setZoom(Math.max(map.getZoom() || 15, 16))
+    }
   }, [coords, map])
-  return null
-}
-
-// 컨테이너 크기 늦게 확정 시 타일 일부만 로드되는 문제 방지
-function InvalidateSize() {
-  const map = useMap()
-  useEffect(() => {
-    const t = setTimeout(() => map.invalidateSize(), 0)
-    return () => clearTimeout(t)
-  }, [map])
   return null
 }
 
@@ -78,7 +57,7 @@ export default function LocationPicker({ coords, onPick, onName }) {
           value={q}
           onChange={(e) => setQ(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); runSearch() } }}
-          placeholder="가게·장소 이름으로 검색 (예: 홍대 연남토마)"
+          placeholder="가게·장소 이름으로 검색 (예: 성수동 카페)"
         />
         <button type="button" onClick={runSearch} disabled={busy}>{busy ? '…' : '검색'}</button>
       </div>
@@ -97,17 +76,23 @@ export default function LocationPicker({ coords, onPick, onName }) {
       )}
 
       <div className="picker-map">
-        <MapContainer center={coords ? [coords.lat, coords.lng] : SEOUL} zoom={coords ? 15 : 11} className="leaflet-root">
-          <TileLayer
-            attribution='&copy; OpenStreetMap'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            maxZoom={19}
-          />
-          <ClickCatcher onPick={onPick} />
+        <Map
+          id="picker"
+          defaultCenter={coords || SEOUL}
+          defaultZoom={coords ? 16 : 11}
+          gestureHandling="greedy"
+          disableDefaultUI
+          zoomControl
+          clickableIcons={false}
+          onClick={(e) => {
+            const ll = e.detail?.latLng
+            if (ll) onPick(ll.lat, ll.lng)
+          }}
+          style={{ width: '100%', height: '100%' }}
+        >
+          {coords && <Marker position={coords} />}
           <Recenter coords={coords} />
-          <InvalidateSize />
-          {coords && <Marker position={[coords.lat, coords.lng]} icon={dropIcon} />}
-        </MapContainer>
+        </Map>
         <div className="picker-hint">지도를 눌러 위치를 콕 찍어보세요</div>
       </div>
     </div>

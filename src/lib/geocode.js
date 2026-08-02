@@ -9,9 +9,10 @@
 //  3) 사용자 인증 정보 → API 키 생성 → 제한:
 //     - 애플리케이션 제한: HTTP 리퍼러 → https://tennisskirt.github.io/*, http://localhost:5175/*
 //     - API 제한: "Places API (New)"만
-//  4) 아래 GOOGLE_PLACES_KEY 에 붙여넣기
-export const GOOGLE_PLACES_KEY = 'AIzaSyDxIrdNerkFcvvKdBo5X2sJEfCnsD6D6Sw'
+//  4) 키는 src/lib/google.js 의 GOOGLE_KEY 에 있음(Places+Maps 공용)
+import { GOOGLE_KEY } from './google.js'
 
+const GOOGLE_PLACES_KEY = GOOGLE_KEY
 const GOOGLE_ENDPOINT = 'https://places.googleapis.com/v1/places:searchText'
 const NOMINATIM = 'https://nominatim.openstreetmap.org/search'
 const REVERSE = 'https://nominatim.openstreetmap.org/reverse'

@@ -3,7 +3,6 @@ import { CATEGORIES, categoryOf } from '../lib/categories.js'
 import { latestVisit, latestRating, placePhoto, visitCount, participantsOf } from '../lib/places.js'
 import { CatIcon, MemberAvatar, UiIcon } from './Icon.jsx'
 import StarRating from './StarRating.jsx'
-import { characterSrc } from '../lib/asset.js'
 import { usePlaces } from '../store/PlacesContext.jsx'
 
 export default function PlaceList({ onSelect }) {
@@ -19,7 +18,6 @@ export default function PlaceList({ onSelect }) {
 
   return (
     <div className="list">
-      <div className="list-mascot"><img src={characterSrc('wife')} alt="" /></div>
       <h2 className="screen-title">{t('우리가족 기록', '家族の記録')} {places.length > 0 && <span className="count">{places.length}</span>}</h2>
 
       <div className="filters">

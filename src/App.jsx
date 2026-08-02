@@ -8,7 +8,7 @@ import FamilyCodeScreen from './components/FamilyCodeScreen.jsx'
 import SettingsSheet from './components/SettingsSheet.jsx'
 import Splash from './components/Splash.jsx'
 import { UiIcon } from './components/Icon.jsx'
-import { tabIconSrc } from './lib/asset.js'
+import { tabIconSrc, characterSrc } from './lib/asset.js'
 import { usePlaces } from './store/PlacesContext.jsx'
 
 const TABS = [
@@ -58,6 +58,8 @@ export default function App() {
           </button>
         ))}
       </nav>
+
+      {tab === 'list' && <img className="list-mascot" src={characterSrc('wife')} alt="" />}
 
       {selected && <PlaceDetail place={selected} onClose={() => setSelected(null)} />}
       {showSettings && <SettingsSheet onClose={() => setShowSettings(false)} />}

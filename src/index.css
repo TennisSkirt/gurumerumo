@@ -92,13 +92,11 @@ button { font-family: inherit; cursor: pointer; }
   filter: drop-shadow(0 2px 5px rgba(0,0,0,.28));
 }
 
-/* 목록 오른쪽 아래 상시 플로팅 (스파게티 아내, 상반신만) */
+/* 목록 오른쪽 아래 상시 플로팅 (스파게티 아내, 전신) — 탭바 바로 위에 얹힘 */
 .list-mascot {
-  position: fixed; right: 2px; bottom: 66px; z-index: 5;
-  width: 132px; height: 116px; overflow: hidden; pointer-events: none;
-}
-.list-mascot img {
-  width: 100%; height: auto; display: block;
+  position: absolute; right: 4px; z-index: 5;
+  bottom: calc(63px + env(safe-area-inset-bottom));
+  width: 150px; height: auto; pointer-events: none;
   filter: drop-shadow(0 2px 5px rgba(0,0,0,.22));
 }
 

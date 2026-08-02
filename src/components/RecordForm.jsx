@@ -18,7 +18,7 @@ export default function RecordForm({ onDone }) {
   const [category, setCategory] = useState('food')
   const [rating, setRating] = useState(0)
   const [coords, setCoords] = useState(null)
-  const [photo, setPhoto] = useState(null)
+  const [photos, setPhotos] = useState([])
   const [visitedAt, setVisitedAt] = useState(todayStr())
   const [memo, setMemo] = useState('')
   const [participants, setParticipants] = useState(() => (me ? [me] : (members[0] ? [members[0].id] : [])))
@@ -28,11 +28,16 @@ export default function RecordForm({ onDone }) {
   const toggleWho = (id) =>
     setParticipants((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
 
-  const onPhoto = async (e) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    try { setPhoto(await compressImage(file)) } catch { alert('사진을 불러오지 못했어요.') }
+  const onPhotos = async (e) => {
+    const files = [...(e.target.files || [])]
+    if (!files.length) return
+    try {
+      const imgs = await Promise.all(files.map((f) => compressImage(f)))
+      setPhotos((prev) => [...prev, ...imgs].slice(0, 10))
+    } catch { alert('사진을 불러오지 못했어요.') }
+    e.target.value = ''
   }
+  const removePhoto = (i) => setPhotos((prev) => prev.filter((_, idx) => idx !== i))
 
   const canSave = name.trim() && coords && participants.length > 0 && !saving
 
@@ -51,7 +56,7 @@ export default function RecordForm({ onDone }) {
         rating,
         lat: coords.lat,
         lng: coords.lng,
-        photo: photo || null,
+        photos,
         visitedAt,
         memo: memo.trim(),
         participants,
@@ -103,11 +108,20 @@ export default function RecordForm({ onDone }) {
         <StarRating value={rating} onChange={setRating} size={40} />
       </div>
 
-      <label className="field">
-        <span>사진</span>
-        <input type="file" accept="image/*" onChange={onPhoto} />
-        {photo && <img className="photo-preview" src={photo} alt="미리보기" />}
-      </label>
+      <div className="field">
+        <span>사진 <em className="hint-inline">여러 장 가능</em></span>
+        <input type="file" accept="image/*" multiple onChange={onPhotos} />
+        {photos.length > 0 && (
+          <div className="photo-grid">
+            {photos.map((p, i) => (
+              <div key={i} className="photo-thumb">
+                <img src={p} alt="" />
+                <button type="button" className="photo-x" onClick={() => removePhoto(i)} aria-label="삭제">×</button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       <label className="field">
         <span>방문일</span>

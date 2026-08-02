@@ -40,10 +40,19 @@ export function visitCount(place) {
   return visitsOf(place).length
 }
 
-// 지도/목록 썸네일용: 사진이 있는 가장 최신 방문의 사진
+// 방문의 사진들 (photos[] 없으면 레거시 photo 1장으로)
+export function visitPhotos(visit) {
+  if (Array.isArray(visit.photos) && visit.photos.length) return visit.photos
+  return visit.photo ? [visit.photo] : []
+}
+
+// 지도/목록 썸네일용: 사진이 있는 가장 최신 방문의 첫 사진
 export function placePhoto(place) {
-  const v = sortedVisits(place).find((x) => x.photo)
-  return v ? v.photo : null
+  for (const v of sortedVisits(place)) {
+    const ps = visitPhotos(v)
+    if (ps.length) return ps[0]
+  }
+  return null
 }
 
 // 대표 별점: 가장 최신 방문의 별점

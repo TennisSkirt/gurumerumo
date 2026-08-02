@@ -205,6 +205,42 @@ button.star { padding: 4px 5px; cursor: pointer; }  /* 입력용 별: 탭 영역
 .visit-form { background: var(--brand-soft); border-radius: 14px; padding: 6px 0 12px; margin-bottom: 12px; }
 .visit-form .field { margin: 0 14px 12px; }
 .visit-form .sheet__actions { margin: 0 14px; }
+.visit--editing { padding: 0; border: none; background: none; }
+
+/* 사진 여러 장 미리보기 그리드 */
+.photo-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.photo-thumb { position: relative; width: 76px; height: 76px; }
+.photo-thumb img { width: 100%; height: 100%; object-fit: cover; border-radius: 10px; }
+.photo-x {
+  position: absolute; top: -6px; right: -6px; width: 22px; height: 22px; border-radius: 50%;
+  border: none; background: rgba(0,0,0,.6); color: #fff; font-size: 15px; line-height: 1; cursor: pointer;
+}
+
+/* 방문 카드 사진들 */
+.visit__photos { display: flex; gap: 6px; overflow-x: auto; margin: 6px 0; }
+.visit__photos img { width: 88px; height: 88px; object-fit: cover; border-radius: 10px; flex: none; }
+.visit__foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 4px; }
+.visit__acts { display: inline-flex; gap: 10px; }
+.danger-link { color: #d23f3f; }
+.icon-btn { border: none; background: none; font-size: 16px; cursor: pointer; padding: 2px 4px; }
+.sheet__head { align-items: center; }
+
+/* 코멘트 */
+.comments-hd { margin: 16px 0 8px; }
+.comments-hd b { font-size: 15px; }
+.comments { list-style: none; margin: 0 0 10px; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.comment { display: flex; gap: 8px; }
+.comment__body { flex: 1; min-width: 0; background: #f6efe8; border-radius: 12px; padding: 8px 10px; }
+.comment__top { display: flex; align-items: center; justify-content: space-between; }
+.comment__top b { font-size: 13px; }
+.comment__x { border: none; background: none; color: var(--ink-soft); font-size: 16px; cursor: pointer; line-height: 1; }
+.comment__msg { margin: 3px 0; font-size: 14px; }
+.comment__photo { width: 100%; max-width: 200px; border-radius: 10px; margin-top: 4px; }
+.comment-form { background: var(--brand-soft); border-radius: 14px; padding: 10px; margin-bottom: 14px; }
+.comment-form textarea { width: 100%; border: 1.5px solid var(--line); border-radius: 10px; padding: 9px 11px; font-family: inherit; font-size: 14px; margin: 8px 0; resize: vertical; }
+.comment-form__row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.mini-file { display: inline-flex; align-items: center; gap: 4px; font-size: 14px; color: var(--brand); font-weight: 700; cursor: pointer; }
+.comment-form .primary { padding: 9px 18px; border: none; border-radius: 10px; background: var(--brand); color: #fff; font-weight: 700; }
 
 /* ── 설정 시트 ── */
 .sheet__title { font-family: 'Jua', sans-serif; font-size: 20px; margin: 0 0 14px; }

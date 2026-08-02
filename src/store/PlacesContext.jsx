@@ -110,7 +110,7 @@ export function PlacesProvider({ children }) {
     const now = Date.now()
     const visit = {
       rating: place.rating || 0,
-      photo: place.photo || null,
+      photos: place.photos || (place.photo ? [place.photo] : []),
       memo: place.memo || '',
       visitedAt: place.visitedAt || '',
       participants: place.participants || (place.author ? [place.author] : []),
@@ -123,6 +123,7 @@ export function PlacesProvider({ children }) {
       lng: place.lng,
       createdAt: now,
       visits: [visit],
+      comments: [],
     }
     if (cloud) {
       const { collection, addDoc } = await import('firebase/firestore')
@@ -132,24 +133,56 @@ export function PlacesProvider({ children }) {
     }
   }, [cloud, familyCode])
 
+  const writeField = useCallback(async (placeId, field, value) => {
+    if (cloud) {
+      const { doc, updateDoc } = await import('firebase/firestore')
+      await updateDoc(doc(db, 'places', familyCode, 'spots', placeId), { [field]: value })
+    } else {
+      setPlaces((prev) => prev.map((p) => (p.id === placeId ? { ...p, [field]: value } : p)))
+    }
+  }, [cloud, familyCode])
+
   // 재방문 — 기존 장소에 방문 기록 한 건 추가
   const addVisit = useCallback(async (place, visit) => {
     const v = {
       rating: visit.rating || 0,
-      photo: visit.photo || null,
+      photos: visit.photos || (visit.photo ? [visit.photo] : []),
       memo: visit.memo || '',
       visitedAt: visit.visitedAt || '',
       participants: visit.participants || (visit.author ? [visit.author] : []),
       createdAt: Date.now(),
     }
-    const nextVisits = [...visitsOf(place), v]
-    if (cloud) {
-      const { doc, updateDoc } = await import('firebase/firestore')
-      await updateDoc(doc(db, 'places', familyCode, 'spots', place.id), { visits: nextVisits })
-    } else {
-      setPlaces((prev) => prev.map((p) => (p.id === place.id ? { ...p, visits: nextVisits } : p)))
+    await writeField(place.id, 'visits', [...visitsOf(place), v])
+  }, [writeField])
+
+  // 방문 수정 (createdAt 으로 대상 식별)
+  const updateVisit = useCallback(async (place, visitCreatedAt, patch) => {
+    const next = visitsOf(place).map((v) =>
+      v.createdAt === visitCreatedAt ? { ...v, ...patch } : v)
+    await writeField(place.id, 'visits', next)
+  }, [writeField])
+
+  // 방문 삭제 (마지막 1건은 삭제 대신 장소 삭제 권장 — UI에서 막음)
+  const deleteVisit = useCallback(async (place, visitCreatedAt) => {
+    const next = visitsOf(place).filter((v) => v.createdAt !== visitCreatedAt)
+    await writeField(place.id, 'visits', next)
+  }, [writeField])
+
+  // 코멘트 추가
+  const addComment = useCallback(async (place, comment) => {
+    const c = {
+      id: crypto.randomUUID(),
+      author: comment.author || null,
+      message: comment.message || '',
+      photo: comment.photo || null,
+      createdAt: Date.now(),
     }
-  }, [cloud, familyCode])
+    await writeField(place.id, 'comments', [...(place.comments || []), c])
+  }, [writeField])
+
+  const deleteComment = useCallback(async (place, commentId) => {
+    await writeField(place.id, 'comments', (place.comments || []).filter((c) => c.id !== commentId))
+  }, [writeField])
 
   const updatePlace = useCallback(async (id, patch) => {
     if (cloud) {
@@ -200,7 +233,8 @@ export function PlacesProvider({ children }) {
     places, me, familyCode, members,
     cloud, firebaseReady,
     membersById, resolveMember, saveMembers,
-    addPlace, addVisit, updatePlace, deletePlace,
+    addPlace, addVisit, updateVisit, deleteVisit, updatePlace, deletePlace,
+    addComment, deleteComment,
     setMe, createFamily, joinFamily, leaveFamily,
     newMemberId,
   }

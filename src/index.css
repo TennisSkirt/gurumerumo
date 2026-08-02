@@ -16,7 +16,9 @@
 html, body, #root { height: 100%; margin: 0; }
 /* 모바일 주소창 여닫힘으로 헤더가 울렁이지 않게 동적 뷰포트 높이 사용 */
 @supports (height: 100dvh) { html, body, #root { height: 100dvh; } }
-body { background: var(--bg); color: var(--ink); overscroll-behavior: none; }
+/* 페이지 자체 스크롤 잠금 → 헤더/탭바 고정(스크롤은 .screen 내부에서만) */
+html, body { overflow: hidden; overscroll-behavior: none; position: fixed; width: 100%; }
+body { background: var(--bg); color: var(--ink); }
 button { font-family: inherit; cursor: pointer; }
 
 .app {
@@ -41,7 +43,8 @@ button { font-family: inherit; cursor: pointer; }
   padding-top: env(safe-area-inset-top);
   box-sizing: content-box;
 }
-.topbar { position: relative; }
+.topbar { position: relative; touch-action: none; }
+.tabbar { touch-action: none; }
 .topbar__logo { font-family: 'Jua', sans-serif; font-size: 20px; letter-spacing: .5px; }
 .topbar__gear {
   position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
@@ -168,7 +171,7 @@ button.star { padding: 4px 5px; cursor: pointer; }  /* 입력용 별: 탭 영역
 .card__top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .card__name { font-size: 16px; }
 .card__cat { color: #fff; font-size: 11px; border-radius: 999px; padding: 3px 8px; white-space: nowrap; }
-.card__memo { margin: 5px 0; font-size: 13px; color: var(--ink-soft); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.card__memo { margin: 5px 0; font-size: 13px; color: var(--ink-soft); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; white-space: pre-wrap; }
 .card__meta { font-size: 12px; color: var(--ink-soft); display: flex; gap: 6px; }
 .empty-note { text-align: center; color: var(--ink-soft); padding: 40px 16px; }
 
@@ -179,8 +182,10 @@ button.star { padding: 4px 5px; cursor: pointer; }  /* 입력용 별: 탭 영역
   padding: 8px 18px calc(18px + env(safe-area-inset-bottom)); max-height: 88vh; overflow-y: auto; animation: up .25s ease;
 }
 @keyframes up { from { transform: translateY(100%); } }
-.sheet__handle { padding: 8px 0 6px; margin: -8px 0 4px; touch-action: none; cursor: grab; }
-.sheet__grab { width: 42px; height: 5px; background: var(--line); border-radius: 999px; margin: 0 auto; }
+/* 드래그로 닫는 손잡이 — 넓은 히트 영역 */
+.sheet__handle { padding: 14px 0 10px; margin: -8px 0 2px; touch-action: none; cursor: grab; }
+.sheet__handle:active { cursor: grabbing; }
+.sheet__grab { width: 48px; height: 6px; background: var(--line); border-radius: 999px; margin: 0 auto; }
 
 /* 언어 토글 */
 .lang-toggle { display: flex; gap: 8px; }
@@ -208,7 +213,7 @@ button.star { padding: 4px 5px; cursor: pointer; }  /* 입력용 별: 탭 영역
 .visit__top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .visit__date { font-size: 12px; color: var(--ink-soft); white-space: nowrap; }
 .visit__norate { font-size: 12px; color: var(--ink-soft); }
-.visit__memo { margin: 5px 0; font-size: 14px; color: var(--ink); }
+.visit__memo { margin: 5px 0; font-size: 14px; color: var(--ink); white-space: pre-wrap; }
 .visit__who { font-size: 12px; color: var(--ink-soft); }
 .visit-badge { color: var(--brand); font-weight: 700; }
 .visit-form { background: var(--brand-soft); border-radius: 14px; padding: 6px 0 12px; margin-bottom: 12px; }
@@ -243,7 +248,7 @@ button.star { padding: 4px 5px; cursor: pointer; }  /* 입력용 별: 탭 영역
 .comment__top { display: flex; align-items: center; justify-content: space-between; }
 .comment__top b { font-size: 13px; }
 .comment__x { border: none; background: none; color: var(--ink-soft); font-size: 16px; cursor: pointer; line-height: 1; }
-.comment__msg { margin: 3px 0; font-size: 14px; }
+.comment__msg { margin: 3px 0; font-size: 14px; white-space: pre-wrap; }
 .comment__photo { width: 100%; max-width: 200px; border-radius: 10px; margin-top: 4px; }
 .comment-form { background: var(--brand-soft); border-radius: 14px; padding: 10px; margin-bottom: 14px; }
 .comment-form textarea { width: 100%; border: 1.5px solid var(--line); border-radius: 10px; padding: 9px 11px; font-family: inherit; font-size: 14px; margin: 8px 0; resize: vertical; }

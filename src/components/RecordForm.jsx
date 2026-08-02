@@ -127,9 +127,9 @@ export default function RecordForm({ onDone }) {
       </div>
 
       <label className="field">
-        <span>{t('한줄 메모', 'ひとことメモ')}</span>
-        <textarea value={memo} onChange={(e) => setMemo(e.target.value)} rows={3}
-          placeholder={t('맛·분위기·다음에 또 올지…', '味・雰囲気・また来たいか…')} />
+        <span>{t('메모', 'メモ')} <em className="hint-inline">{t('줄바꿈 가능 (메뉴 등)', '改行OK（メニューなど）')}</em></span>
+        <textarea value={memo} onChange={(e) => setMemo(e.target.value)} rows={4}
+          placeholder={t('맛·분위기·시킨 메뉴·다음에 또 올지…', '味・雰囲気・注文したメニュー・また来たいか…')} />
       </label>
 
       <button className="save-btn" type="submit" disabled={!canSave}>

@@ -87,8 +87,8 @@ function VisitForm({ place, initial, onDone, onCancel }) {
         </div>
       </div>
       <label className="field">
-        <span>{t('한줄 메모', 'ひとことメモ')}</span>
-        <textarea value={memo} onChange={(e) => setMemo(e.target.value)} rows={2} placeholder={t('이번 방문은 어땠나요?', '今回はどうでしたか？')} />
+        <span>{t('메모', 'メモ')} <em className="hint-inline">{t('줄바꿈 가능', '改行OK')}</em></span>
+        <textarea value={memo} onChange={(e) => setMemo(e.target.value)} rows={3} placeholder={t('이번 방문은 어땠나요?', '今回はどうでしたか？')} />
       </label>
       <div className="sheet__actions">
         <button className="ghost" onClick={onCancel}>{t('취소', 'キャンセル')}</button>

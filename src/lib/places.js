@@ -2,6 +2,19 @@
 // 신 모델: place.visits = [{ rating, photo, memo, visitedAt, author, createdAt }, ...]
 // 구 모델(레거시): rating/photo/memo/visitedAt/author 가 place 최상위에 있음 → 방문 1건으로 변환
 
+// 방문 참여자(같이/따로) — participants[] 없으면 레거시 author 1명으로
+export function participantsOf(visit) {
+  if (Array.isArray(visit.participants) && visit.participants.length) return visit.participants
+  return visit.author ? [visit.author] : []
+}
+
+// 장소의 모든 방문에 참여한 사람 합집합 (마커 얼굴용)
+export function placeParticipants(place) {
+  const set = new Set()
+  for (const v of visitsOf(place)) for (const id of participantsOf(v)) set.add(id)
+  return [...set]
+}
+
 export function visitsOf(place) {
   if (Array.isArray(place.visits) && place.visits.length) return place.visits
   return [{

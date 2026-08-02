@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { CATEGORIES, categoryOf } from '../lib/categories.js'
-import { visitsOf } from '../lib/places.js'
+import { visitsOf, participantsOf } from '../lib/places.js'
+import { CatIcon, MemberAvatar } from './Icon.jsx'
 import { usePlaces } from '../store/PlacesContext.jsx'
 
 export default function FamilyPage({ onSelect, onOpenSettings }) {
@@ -15,7 +16,7 @@ export default function FamilyPage({ onSelect, onOpenSettings }) {
       byCat[p.category] = (byCat[p.category] || 0) + 1
       for (const v of visitsOf(p)) {
         totalVisits++
-        if (v.author) byMember[v.author] = (byMember[v.author] || 0) + 1
+        for (const pid of participantsOf(v)) byMember[pid] = (byMember[pid] || 0) + 1
         if (v.rating && (!best || v.rating > best.rating)) best = { place: p, rating: v.rating }
       }
     }
@@ -38,7 +39,7 @@ export default function FamilyPage({ onSelect, onOpenSettings }) {
               className={'chip' + (me === m.id ? ' on' : '')}
               onClick={() => setMe(m.id)}
             >
-              <span className="chip__emoji">{m.emoji}</span>{m.label}
+              <MemberAvatar member={m} size={24} className="chip__ava" />{m.label}
             </button>
           ))}
         </div>
@@ -61,7 +62,7 @@ export default function FamilyPage({ onSelect, onOpenSettings }) {
         <section className="panel">
           <div className="panel__title">⭐ 우리 가족 최애</div>
           <button className="fav" onClick={() => onSelect(stats.best.place)}>
-            <span className="fav__emoji">{categoryOf(stats.best.place.category).emoji}</span>
+            <CatIcon category={stats.best.place.category} size={26} className="fav__emoji" />
             <span className="fav__name">{stats.best.place.name}</span>
             <span className="fav__star">{'★'.repeat(stats.best.rating)}</span>
           </button>
@@ -77,7 +78,7 @@ export default function FamilyPage({ onSelect, onOpenSettings }) {
               const pct = Math.round((n / stats.total) * 100)
               return (
                 <li key={c.id}>
-                  <span className="bars__label">{c.emoji} {c.label}</span>
+                  <span className="bars__label"><CatIcon category={c.id} size={18} /> {c.label}</span>
                   <span className="bars__track"><span className="bars__fill" style={{ width: pct + '%', background: c.color }} /></span>
                   <span className="bars__n">{n}</span>
                 </li>
@@ -96,8 +97,8 @@ export default function FamilyPage({ onSelect, onOpenSettings }) {
               return (
                 <li key={r.id}>
                   <span className="ranking__medal">{['🥇', '🥈', '🥉'][i] || `${i + 1}`}</span>
-                  <span className="ranking__who">{m.emoji} {m.label}</span>
-                  <span className="ranking__n">{r.n}곳</span>
+                  <span className="ranking__who"><MemberAvatar member={m} size={22} /> {m.label}</span>
+                  <span className="ranking__n">{r.n}회</span>
                 </li>
               )
             })}

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import LocationPicker from './LocationPicker.jsx'
 import StarRating from './StarRating.jsx'
+import { CatIcon, MemberAvatar } from './Icon.jsx'
 import { CATEGORIES } from '../lib/categories.js'
 import { compressImage } from '../lib/image.js'
 import { usePlaces } from '../store/PlacesContext.jsx'
@@ -12,7 +13,7 @@ function todayStr() {
 }
 
 export default function RecordForm({ onDone }) {
-  const { addPlace, me, members, resolveMember } = usePlaces()
+  const { addPlace, me, members } = usePlaces()
   const [name, setName] = useState('')
   const [category, setCategory] = useState('food')
   const [rating, setRating] = useState(0)
@@ -20,27 +21,26 @@ export default function RecordForm({ onDone }) {
   const [photo, setPhoto] = useState(null)
   const [visitedAt, setVisitedAt] = useState(todayStr())
   const [memo, setMemo] = useState('')
-  const [author, setAuthor] = useState(me || members[0]?.id)
+  const [participants, setParticipants] = useState(() => (me ? [me] : (members[0] ? [members[0].id] : [])))
   const [saving, setSaving] = useState(false)
 
   const pick = (lat, lng) => setCoords({ lat, lng })
+  const toggleWho = (id) =>
+    setParticipants((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
 
   const onPhoto = async (e) => {
     const file = e.target.files?.[0]
     if (!file) return
-    try {
-      setPhoto(await compressImage(file))
-    } catch {
-      alert('사진을 불러오지 못했어요.')
-    }
+    try { setPhoto(await compressImage(file)) } catch { alert('사진을 불러오지 못했어요.') }
   }
 
-  const canSave = name.trim() && coords && !saving
+  const canSave = name.trim() && coords && participants.length > 0 && !saving
 
   const submit = async (e) => {
     e.preventDefault()
     if (!canSave) {
       if (!coords) alert('위치를 검색하거나 지도에서 찍어주세요.')
+      else if (participants.length === 0) alert('누가 갔는지 한 명 이상 골라주세요.')
       return
     }
     setSaving(true)
@@ -54,7 +54,7 @@ export default function RecordForm({ onDone }) {
         photo: photo || null,
         visitedAt,
         memo: memo.trim(),
-        author,
+        participants,
       })
       onDone?.()
     } catch (err) {
@@ -84,7 +84,7 @@ export default function RecordForm({ onDone }) {
               style={category === c.id ? { '--chip': c.color } : undefined}
               onClick={() => setCategory(c.id)}
             >
-              <span className="chip__emoji">{c.emoji}</span>{c.label}
+              <CatIcon category={c.id} size={20} className="chip__ic" />{c.label}
             </button>
           ))}
         </div>
@@ -115,16 +115,16 @@ export default function RecordForm({ onDone }) {
       </label>
 
       <div className="field">
-        <span>누가 기록하나요?</span>
+        <span>누가 갔나요? <em className="hint-inline">같이 가면 둘 다 선택</em></span>
         <div className="chips">
           {members.map((m) => (
             <button
               type="button"
               key={m.id}
-              className={'chip' + (author === m.id ? ' on' : '')}
-              onClick={() => setAuthor(m.id)}
+              className={'chip chip--who' + (participants.includes(m.id) ? ' on' : '')}
+              onClick={() => toggleWho(m.id)}
             >
-              <span className="chip__emoji">{m.emoji}</span>{m.label}
+              <MemberAvatar member={m} size={24} className="chip__ava" />{m.label}
             </button>
           ))}
         </div>
@@ -136,7 +136,7 @@ export default function RecordForm({ onDone }) {
       </label>
 
       <button className="save-btn" type="submit" disabled={!canSave}>
-        {saving ? '저장 중…' : `${resolveMember(author).emoji} 이 장소 기록하기`}
+        {saving ? '저장 중…' : '이 장소 기록하기'}
       </button>
     </form>
   )

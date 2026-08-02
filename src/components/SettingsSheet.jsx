@@ -1,5 +1,7 @@
 import { useState } from 'react'
-import { EMOJI_CHOICES } from '../lib/members.js'
+import { AVATAR_CHOICES } from '../lib/members.js'
+import { faceRoundSrc } from '../lib/asset.js'
+import { UiIcon } from './Icon.jsx'
 import { usePlaces } from '../store/PlacesContext.jsx'
 
 // 설정 바텀시트 — 가족 구성원 관리 + 가족 코드
@@ -10,7 +12,7 @@ export default function SettingsSheet({ onClose }) {
 
   const patch = (id, p) => setDraft((d) => d.map((m) => (m.id === id ? { ...m, ...p } : m)))
   const remove = (id) => setDraft((d) => d.filter((m) => m.id !== id))
-  const add = () => setDraft((d) => [...d, { id: newMemberId(), label: '', emoji: '🙂' }])
+  const add = () => setDraft((d) => [...d, { id: newMemberId(), label: '', emoji: '🙂', avatar: 'husband' }])
 
   const save = async () => {
     // 이름 빈 칸은 기본 라벨로 정리
@@ -40,7 +42,7 @@ export default function SettingsSheet({ onClose }) {
     <div className="sheet-backdrop" onClick={onClose}>
       <div className="sheet" onClick={(e) => e.stopPropagation()}>
         <div className="sheet__grab" />
-        <h3 className="sheet__title">⚙️ 설정</h3>
+        <h3 className="sheet__title"><UiIcon name="gear" size={20} /> 설정</h3>
 
         <div className="set-section">
           <div className="set-section__head">
@@ -50,34 +52,37 @@ export default function SettingsSheet({ onClose }) {
           <ul className="member-edit-list">
             {draft.map((m) => (
               <li key={m.id} className="member-edit">
-                <select
-                  className="emoji-select"
-                  value={m.emoji}
-                  onChange={(e) => patch(m.id, { emoji: e.target.value })}
-                  aria-label="이모지"
-                >
-                  {/* 현재 이모지가 목록에 없을 수도 있으니 항상 첫 옵션으로 포함 */}
-                  {!EMOJI_CHOICES.includes(m.emoji) && <option value={m.emoji}>{m.emoji}</option>}
-                  {EMOJI_CHOICES.map((e) => (
-                    <option key={e} value={e}>{e}</option>
+                <div className="member-edit__row">
+                  <input
+                    className="member-name"
+                    value={m.label}
+                    onChange={(e) => patch(m.id, { label: e.target.value })}
+                    placeholder="이름 (예: 아빠, 김밀리)"
+                    maxLength={12}
+                  />
+                  <button
+                    className="member-del"
+                    onClick={() => remove(m.id)}
+                    disabled={draft.length <= 1}
+                    aria-label="삭제"
+                    title={draft.length <= 1 ? '최소 1명은 있어야 해요' : '삭제'}
+                  >
+                    <UiIcon name="trash" size={18} />
+                  </button>
+                </div>
+                <div className="ava-pick">
+                  {AVATAR_CHOICES.map((a) => (
+                    <button
+                      type="button"
+                      key={a.key}
+                      className={'ava-opt' + (m.avatar === a.key ? ' on' : '')}
+                      onClick={() => patch(m.id, { avatar: a.key })}
+                      title={a.label}
+                    >
+                      <img src={faceRoundSrc(a.key)} alt={a.label} />
+                    </button>
                   ))}
-                </select>
-                <input
-                  className="member-name"
-                  value={m.label}
-                  onChange={(e) => patch(m.id, { label: e.target.value })}
-                  placeholder="이름 (예: 아빠, 김밀리)"
-                  maxLength={12}
-                />
-                <button
-                  className="member-del"
-                  onClick={() => remove(m.id)}
-                  disabled={draft.length <= 1}
-                  aria-label="삭제"
-                  title={draft.length <= 1 ? '최소 1명은 있어야 해요' : '삭제'}
-                >
-                  🗑
-                </button>
+                </div>
               </li>
             ))}
           </ul>

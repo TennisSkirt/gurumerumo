@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { categoryOf } from '../lib/categories.js'
-import { sortedVisits } from '../lib/places.js'
+import { sortedVisits, participantsOf } from '../lib/places.js'
 import { compressImage } from '../lib/image.js'
+import { CatIcon, MemberAvatar, UiIcon } from './Icon.jsx'
 import StarRating from './StarRating.jsx'
 import { usePlaces } from '../store/PlacesContext.jsx'
 
@@ -11,15 +12,18 @@ function todayStr() {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`
 }
 
-// 재방문 기록 폼(상세 안에서 펼쳐짐)
+// 재방문 기록 폼
 function VisitForm({ place, onDone, onCancel }) {
   const { addVisit, me, members } = usePlaces()
   const [rating, setRating] = useState(0)
   const [photo, setPhoto] = useState(null)
   const [visitedAt, setVisitedAt] = useState(todayStr())
   const [memo, setMemo] = useState('')
-  const [author, setAuthor] = useState(me || members[0]?.id)
+  const [participants, setParticipants] = useState(() => (me ? [me] : (members[0] ? [members[0].id] : [])))
   const [saving, setSaving] = useState(false)
+
+  const toggleWho = (id) =>
+    setParticipants((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
 
   const onPhoto = async (e) => {
     const file = e.target.files?.[0]
@@ -28,14 +32,13 @@ function VisitForm({ place, onDone, onCancel }) {
   }
 
   const submit = async () => {
+    if (participants.length === 0) { alert('누가 갔는지 골라주세요.'); return }
     setSaving(true)
     try {
-      await addVisit(place, { rating, photo, visitedAt, memo: memo.trim(), author })
+      await addVisit(place, { rating, photo, visitedAt, memo: memo.trim(), participants })
       onDone()
     } catch (e) {
-      console.error(e)
-      alert('저장 중 문제가 생겼어요.')
-      setSaving(false)
+      console.error(e); alert('저장 중 문제가 생겼어요.'); setSaving(false)
     }
   }
 
@@ -55,13 +58,13 @@ function VisitForm({ place, onDone, onCancel }) {
         {photo && <img className="photo-preview" src={photo} alt="미리보기" />}
       </label>
       <div className="field">
-        <span>누가 기록하나요?</span>
+        <span>누가 갔나요? <em className="hint-inline">같이 가면 둘 다</em></span>
         <div className="chips">
           {members.map((mm) => (
             <button type="button" key={mm.id}
-              className={'chip' + (author === mm.id ? ' on' : '')}
-              onClick={() => setAuthor(mm.id)}>
-              <span className="chip__emoji">{mm.emoji}</span>{mm.label}
+              className={'chip chip--who' + (participants.includes(mm.id) ? ' on' : '')}
+              onClick={() => toggleWho(mm.id)}>
+              <MemberAvatar member={mm} size={24} className="chip__ava" />{mm.label}
             </button>
           ))}
         </div>
@@ -78,13 +81,11 @@ function VisitForm({ place, onDone, onCancel }) {
   )
 }
 
-// 장소 상세 바텀시트 — 방문 이력 + 재방문 기록
 export default function PlaceDetail({ place, onClose }) {
   const { places, deletePlace, resolveMember } = usePlaces()
   const [adding, setAdding] = useState(false)
   if (!place) return null
 
-  // onSnapshot 갱신 시 최신 place 로 재조회(방문 추가 후 이력 즉시 반영)
   const live = places.find((p) => p.id === place.id) || place
   const c = categoryOf(live.category)
   const visits = sortedVisits(live)
@@ -107,7 +108,7 @@ export default function PlaceDetail({ place, onClose }) {
         {cover && <img className="sheet__photo" src={cover} alt="" />}
         <div className="sheet__head">
           <h3>{live.name}</h3>
-          <span className="card__cat" style={{ background: c.color }}>{c.emoji} {c.label}</span>
+          <span className="card__cat" style={{ background: c.color }}><CatIcon category={c.id} size={15} /> {c.label}</span>
         </div>
 
         <div className="visit-hd">
@@ -121,7 +122,7 @@ export default function PlaceDetail({ place, onClose }) {
 
         <ul className="visits">
           {visits.map((v, i) => {
-            const m = resolveMember(v.author)
+            const who = participantsOf(v).map((id) => resolveMember(id))
             return (
               <li key={i} className="visit">
                 {v.photo && <img className="visit__photo" src={v.photo} alt="" />}
@@ -131,7 +132,10 @@ export default function PlaceDetail({ place, onClose }) {
                     <span className="visit__date">{v.visitedAt || ''}</span>
                   </div>
                   {v.memo && <p className="visit__memo">{v.memo}</p>}
-                  <div className="visit__who">{m.emoji} {m.label}</div>
+                  <div className="visit__who">
+                    {who.map((m, j) => <MemberAvatar key={j} member={m} size={18} />)}
+                    <span>{who.map((m) => m.label).join('·')}</span>
+                  </div>
                 </div>
               </li>
             )
@@ -139,8 +143,8 @@ export default function PlaceDetail({ place, onClose }) {
         </ul>
 
         <div className="sheet__actions">
-          <button className="ghost" onClick={openInMaps}>🧭 지도앱에서 열기</button>
-          <button className="danger" onClick={remove}>🗑 삭제</button>
+          <button className="ghost" onClick={openInMaps}><UiIcon name="compass" size={16} /> 지도앱에서 열기</button>
+          <button className="danger" onClick={remove}><UiIcon name="trash" size={16} /> 삭제</button>
         </div>
         <button className="sheet__close" onClick={onClose}>닫기</button>
       </div>

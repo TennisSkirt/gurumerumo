@@ -1,28 +1,19 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Map, Marker, useMap, useApiIsLoaded } from '@vis.gl/react-google-maps'
 import { categoryOf } from '../lib/categories.js'
-import { placePhoto } from '../lib/places.js'
+import { placePhoto, placeParticipants } from '../lib/places.js'
+import { catIconSrc, faceRoundSrc } from '../lib/asset.js'
 import { usePlaces } from '../store/PlacesContext.jsx'
 
 const SEOUL = { lat: 37.5665, lng: 126.978 }
 
-// ── 카테고리 색 물방울 핀(사진 없을 때) ──
-function pinUrl(categoryId) {
-  const c = categoryOf(categoryId)
-  const svg =
-    `<svg xmlns='http://www.w3.org/2000/svg' width='36' height='46' viewBox='0 0 36 46'>` +
-    `<path d='M18 2C9.7 2 3 8.7 3 17c0 10.6 15 27 15 27s15-16.4 15-27C33 8.7 26.3 2 18 2z' fill='${c.color}' stroke='#fff' stroke-width='2.5'/>` +
-    `<circle cx='18' cy='17' r='9.5' fill='#fff'/>` +
-    `<text x='18' y='18' font-size='13' text-anchor='middle' dominant-baseline='central'>${c.emoji}</text>` +
-    `</svg>`
-  return 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg)
-}
-function categoryIcon(categoryId) {
-  return {
-    url: pinUrl(categoryId),
-    scaledSize: new window.google.maps.Size(36, 46),
-    anchor: new window.google.maps.Point(18, 44),
-  }
+function loadImg(src) {
+  return new Promise((resolve, reject) => {
+    const i = new Image()
+    i.onload = () => resolve(i)
+    i.onerror = reject
+    i.src = src
+  })
 }
 
 function roundRect(ctx, x, y, w, h, r) {
@@ -35,81 +26,97 @@ function roundRect(ctx, x, y, w, h, r) {
   ctx.closePath()
 }
 
-// ── 사진 썸네일 핀(사진 있을 때): 캔버스로 둥근 사각 + 카테고리색 테두리 + 아래 삼각 꼬리 ──
-function buildPhotoIcon(photo, categoryId) {
-  return new Promise((resolve) => {
-    const color = categoryOf(categoryId).color
-    const inner = 54          // 사진 영역
-    const bd = 3              // 테두리
-    const tail = 9            // 꼬리 높이
-    const w = inner + bd * 2
-    const boxH = inner + bd * 2
-    const h = boxH + tail
-    const img = new Image()
-    img.onload = () => {
-      const c = document.createElement('canvas')
-      c.width = w
-      c.height = h
-      const ctx = c.getContext('2d')
-      // 그림자
-      ctx.save()
-      ctx.shadowColor = 'rgba(0,0,0,.35)'
-      ctx.shadowBlur = 4
-      ctx.shadowOffsetY = 2
-      // 테두리(둥근 사각) + 꼬리
-      ctx.fillStyle = color
-      roundRect(ctx, 0, 0, w, boxH, 14)
-      ctx.fill()
-      ctx.beginPath()
-      ctx.moveTo(w / 2 - 7, boxH - 3)
-      ctx.lineTo(w / 2 + 7, boxH - 3)
-      ctx.lineTo(w / 2, h)
-      ctx.closePath()
-      ctx.fill()
-      ctx.restore()
-      // 사진(둥근 사각으로 클립, cover 맞춤)
-      ctx.save()
-      roundRect(ctx, bd, bd, inner, inner, 11)
-      ctx.clip()
-      const scale = Math.max(inner / img.width, inner / img.height)
-      const dw = img.width * scale
-      const dh = img.height * scale
-      ctx.drawImage(img, bd + (inner - dw) / 2, bd + (inner - dh) / 2, dw, dh)
-      ctx.restore()
-      resolve({
-        url: c.toDataURL('image/png'),
-        scaledSize: new window.google.maps.Size(w, h),
-        anchor: new window.google.maps.Point(w / 2, h),
-      })
-    }
-    img.onerror = () => resolve(categoryIcon(categoryId))
-    img.src = photo
-  })
+// 참여자 → 얼굴 이미지 키 (1명=본인 아바타 / 2명 이상=커플)
+function faceKeyFor(place, resolveMember) {
+  const ids = placeParticipants(place)
+  if (ids.length >= 2) return 'couple'
+  if (ids.length === 1) return resolveMember(ids[0]).avatar || null
+  return null
 }
 
-// 장소 한 개의 마커 — 사진 있으면 썸네일 핀, 없으면 카테고리 핀
-function PlaceMarker({ place, onSelect }) {
+// 마커 = (사진 또는 카테고리 아이콘) 상자 + 위에 얼굴 아바타
+async function buildMarkerIcon(place, resolveMember) {
+  const color = categoryOf(place.category).color
   const photo = placePhoto(place)
-  const [icon, setIcon] = useState(() => categoryIcon(place.category))
+  const faceKey = faceKeyFor(place, resolveMember)
+
+  const inner = 52, bd = 3, boxOuter = inner + bd * 2 // 58
+  const face = 38, overlap = 15, tail = 9
+  const w = boxOuter
+  const boxTop = face - overlap // 23
+  const h = boxTop + boxOuter + tail // 90
+  const cx = w / 2
+
+  const c = document.createElement('canvas')
+  c.width = w; c.height = h
+  const ctx = c.getContext('2d')
+
+  // 상자 테두리 + 꼬리 (그림자)
+  ctx.save()
+  ctx.shadowColor = 'rgba(0,0,0,.3)'; ctx.shadowBlur = 4; ctx.shadowOffsetY = 2
+  ctx.fillStyle = color
+  roundRect(ctx, 0, boxTop, boxOuter, boxOuter, 14); ctx.fill()
+  ctx.beginPath()
+  ctx.moveTo(cx - 7, boxTop + boxOuter - 3)
+  ctx.lineTo(cx + 7, boxTop + boxOuter - 3)
+  ctx.lineTo(cx, boxTop + boxOuter + tail)
+  ctx.closePath(); ctx.fill()
+  ctx.restore()
+
+  // 내부: 사진(cover) 또는 카테고리 아이콘(흰 배경 + contain)
+  ctx.save()
+  roundRect(ctx, bd, boxTop + bd, inner, inner, 11); ctx.clip()
+  ctx.fillStyle = '#fff'
+  ctx.fillRect(bd, boxTop + bd, inner, inner)
+  try {
+    if (photo) {
+      const img = await loadImg(photo)
+      const s = Math.max(inner / img.width, inner / img.height)
+      const dw = img.width * s, dh = img.height * s
+      ctx.drawImage(img, bd + (inner - dw) / 2, boxTop + bd + (inner - dh) / 2, dw, dh)
+    } else {
+      const img = await loadImg(catIconSrc(place.category))
+      const pad = 5, box = inner - pad * 2
+      const s = Math.min(box / img.width, box / img.height)
+      const dw = img.width * s, dh = img.height * s
+      ctx.drawImage(img, bd + (inner - dw) / 2, boxTop + bd + (inner - dh) / 2, dw, dh)
+    }
+  } catch { /* 이미지 로드 실패 시 흰 상자만 */ }
+  ctx.restore()
+
+  // 얼굴 아바타 (상자 위)
+  if (faceKey) {
+    try {
+      const f = await loadImg(faceRoundSrc(faceKey))
+      ctx.drawImage(f, (w - face) / 2, 0, face, face)
+    } catch { /* 얼굴 없으면 생략 */ }
+  }
+
+  return {
+    url: c.toDataURL('image/png'),
+    scaledSize: new window.google.maps.Size(w, h),
+    anchor: new window.google.maps.Point(cx, h),
+  }
+}
+
+function PlaceMarker({ place, onSelect }) {
+  const { resolveMember } = usePlaces()
+  const [icon, setIcon] = useState(null)
+  const faceKey = faceKeyFor(place, resolveMember)
+  const photo = placePhoto(place)
   useEffect(() => {
     let cancelled = false
-    if (photo) {
-      buildPhotoIcon(photo, place.category).then((ic) => { if (!cancelled) setIcon(ic) })
-    } else {
-      setIcon(categoryIcon(place.category))
-    }
+    buildMarkerIcon(place, resolveMember).then((ic) => { if (!cancelled) setIcon(ic) })
     return () => { cancelled = true }
-  }, [photo, place.category])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [photo, place.category, faceKey])
+  if (!icon) return null
   return (
-    <Marker
-      position={{ lat: place.lat, lng: place.lng }}
-      icon={icon}
-      onClick={() => onSelect(place)}
-    />
+    <Marker position={{ lat: place.lat, lng: place.lng }} icon={icon} onClick={() => onSelect(place)} />
   )
 }
 
-// 장소가 처음 로드되면 지도를 그 장소들에 맞춰 한 번 이동(클라우드 비동기 로드 대응)
+// 장소가 처음 로드되면 지도를 그 장소들에 맞춰 한 번 이동
 function FitPlaces({ places }) {
   const map = useMap('main')
   const done = useRef(false)
@@ -128,7 +135,6 @@ function FitPlaces({ places }) {
   return null
 }
 
-// 내 위치로 이동 버튼
 function LocateButton() {
   const map = useMap('main')
   const locate = () => {

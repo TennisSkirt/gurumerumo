@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { CATEGORIES, categoryOf } from '../lib/categories.js'
-import { latestVisit, latestRating, placePhoto, visitCount } from '../lib/places.js'
+import { latestVisit, latestRating, placePhoto, visitCount, participantsOf } from '../lib/places.js'
+import { CatIcon, MemberAvatar, UiIcon } from './Icon.jsx'
 import StarRating from './StarRating.jsx'
 import { usePlaces } from '../store/PlacesContext.jsx'
 
@@ -29,7 +30,7 @@ export default function PlaceList({ onSelect }) {
               style={cat === c.id ? { '--chip': c.color } : undefined}
               onClick={() => setCat(c.id)}
             >
-              <span className="chip__emoji">{c.emoji}</span>{c.label}
+              <CatIcon category={c.id} size={20} className="chip__ic" />{c.label}
             </button>
           ))}
         </div>
@@ -50,7 +51,7 @@ export default function PlaceList({ onSelect }) {
           {filtered.map((p) => {
             const c = categoryOf(p.category)
             const lv = latestVisit(p)
-            const m = resolveMember(lv.author)
+            const who = participantsOf(lv).map((id) => resolveMember(id))
             const photo = placePhoto(p)
             const visits = visitCount(p)
             return (
@@ -60,20 +61,23 @@ export default function PlaceList({ onSelect }) {
                     <img className="card__thumb" src={photo} alt="" />
                   ) : (
                     <div className="card__thumb card__thumb--ph" style={{ background: c.color + '22' }}>
-                      <span>{c.emoji}</span>
+                      <CatIcon category={c.id} size={44} />
                     </div>
                   )}
                   <div className="card__body">
                     <div className="card__top">
                       <b className="card__name">{p.name}</b>
-                      <span className="card__cat" style={{ background: c.color }}>{c.emoji} {c.label}</span>
+                      <span className="card__cat" style={{ background: c.color }}><CatIcon category={c.id} size={14} /> {c.label}</span>
                     </div>
                     {lv.rating > 0 && <StarRating value={lv.rating} readOnly size={15} />}
                     {lv.memo && <p className="card__memo">{lv.memo}</p>}
                     <div className="card__meta">
-                      <span>{m.emoji} {m.label}</span>
+                      <span className="who-inline">
+                        {who.map((m, i) => <MemberAvatar key={i} member={m} size={18} />)}
+                        {who.map((m) => m.label).join('·')}
+                      </span>
                       {lv.visitedAt && <span>· {lv.visitedAt}</span>}
-                      {visits > 1 && <span className="visit-badge">🔁 {visits}번 방문</span>}
+                      {visits > 1 && <span className="visit-badge"><UiIcon name="revisit" size={13} /> {visits}번</span>}
                     </div>
                   </div>
                 </button>

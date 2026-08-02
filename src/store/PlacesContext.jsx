@@ -83,8 +83,11 @@ export function PlacesProvider({ children }) {
         doc(db, 'places', familyCode),
         (snap) => {
           const data = snap.data()
-          if (data?.members?.length) setMembers(data.members)
-          else setMembers(DEFAULT_MEMBERS)
+          if (data?.members?.length) {
+            // 예전에 저장돼 avatar 가 없는 기본 구성원(m1/m2)엔 얼굴 아바타 보정
+            setMembers(data.members.map((m) =>
+              m.avatar ? m : { ...m, avatar: m.id === 'm1' ? 'husband' : m.id === 'm2' ? 'wife' : undefined }))
+          } else setMembers(DEFAULT_MEMBERS)
         },
         // 규칙이 아직 가족문서를 허용 안 하면 조용히 기본 구성원 유지
         () => setMembers(DEFAULT_MEMBERS),
@@ -110,7 +113,7 @@ export function PlacesProvider({ children }) {
       photo: place.photo || null,
       memo: place.memo || '',
       visitedAt: place.visitedAt || '',
-      author: place.author || null,
+      participants: place.participants || (place.author ? [place.author] : []),
       createdAt: now,
     }
     const entry = {
@@ -136,7 +139,7 @@ export function PlacesProvider({ children }) {
       photo: visit.photo || null,
       memo: visit.memo || '',
       visitedAt: visit.visitedAt || '',
-      author: visit.author || null,
+      participants: visit.participants || (visit.author ? [visit.author] : []),
       createdAt: Date.now(),
     }
     const nextVisits = [...visitsOf(place), v]

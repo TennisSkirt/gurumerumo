@@ -246,6 +246,37 @@ button.star { padding: 4px 5px; cursor: pointer; }  /* 입력용 별: 탭 영역
 .ranking__n { color: var(--ink-soft); font-size: 13px; }
 .code { background: var(--brand-soft); color: var(--brand); padding: 2px 8px; border-radius: 6px; letter-spacing: 2px; }
 
+/* ── 스플래시 ── */
+.splash {
+  position: fixed; inset: 0; z-index: 5000;
+  background: var(--cream, #fff7ef);
+  display: flex; align-items: center; justify-content: center;
+  transition: opacity .5s ease;
+}
+.splash--out { opacity: 0; pointer-events: none; }
+.splash img { width: 100%; height: 100%; max-width: 520px; object-fit: cover; }
+
+/* ── 이미지 아이콘 정렬 ── */
+.chip { align-items: center; }
+.chip__ic, .chip__ava { flex: none; }
+.chip__ava { border-radius: 50%; }
+.chip--who.on .chip__ava { box-shadow: 0 0 0 2px #fff; }
+.card__cat { display: inline-flex; align-items: center; gap: 3px; }
+.who-inline { display: inline-flex; align-items: center; gap: 3px; }
+.who-inline img { margin-right: -4px; }
+.who-inline img:last-of-type { margin-right: 2px; }
+.visit-badge { display: inline-flex; align-items: center; gap: 2px; color: var(--brand); font-weight: 700; }
+.visit__who { display: flex; align-items: center; gap: 4px; }
+.hint-inline { font-style: normal; font-weight: 400; font-size: 12px; color: var(--ink-soft); }
+
+/* 구성원 아바타 픽커(설정) */
+.member-edit { display: flex; flex-direction: column; gap: 8px; background: #fff; border: 1.5px solid var(--line); border-radius: 14px; padding: 10px; }
+.member-edit__row { display: flex; align-items: center; gap: 8px; }
+.ava-pick { display: flex; gap: 10px; }
+.ava-opt { width: 46px; height: 46px; border-radius: 50%; border: 2.5px solid var(--line); background: #fff; padding: 0; overflow: hidden; }
+.ava-opt img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ava-opt.on { border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-soft); }
+
 /* ── 탭바 ── */
 .tabbar {
   flex: 0 0 auto; display: flex; background: var(--card); border-top: 1.5px solid var(--line);
@@ -255,10 +286,9 @@ button.star { padding: 4px 5px; cursor: pointer; }  /* 입력용 별: 탭 영역
   flex: 1; border: none; background: none; padding: 9px 0 8px;
   display: flex; flex-direction: column; align-items: center; gap: 2px; color: var(--ink-soft);
 }
-.tabbar__emoji { font-size: 22px; filter: grayscale(.4) opacity(.7); }
+.tabbar__ic { display: block; object-fit: contain; }
 .tabbar__label { font-size: 11px; }
 .tabbar__btn.on { color: var(--brand); }
-.tabbar__btn.on .tabbar__emoji { filter: none; }
 
 /* ── 가족코드 게이트 ── */
 .gate { padding: 60px 26px; text-align: center; display: flex; flex-direction: column; gap: 14px; }

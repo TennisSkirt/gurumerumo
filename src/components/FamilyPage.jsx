@@ -84,13 +84,15 @@ export default function FamilyPage({ onSelect, onOpenSettings }) {
 
       {stats.ranking.length > 0 && (
         <section className="panel">
-          <div className="panel__title">🏆 {t('기록 랭킹', '記録ランキング')}</div>
+          <div className="panel__title"><UiIcon name="trophy" size={19} /> {t('기록 랭킹', '記録ランキング')}</div>
           <ol className="ranking">
             {stats.ranking.map((r, i) => {
               const m = resolveMember(r.id)
               return (
                 <li key={r.id}>
-                  <span className="ranking__medal">{['🥇', '🥈', '🥉'][i] || `${i + 1}`}</span>
+                  <span className="ranking__medal">
+                    {i < 3 ? <UiIcon name={`medal${i + 1}`} size={26} /> : `${i + 1}`}
+                  </span>
                   <span className="ranking__who"><MemberAvatar member={m} size={22} /> {m.label}</span>
                   <span className="ranking__n">{t(`${r.n}회`, `${r.n}回`)}</span>
                 </li>

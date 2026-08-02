@@ -63,10 +63,10 @@ button { font-family: inherit; cursor: pointer; }
 .leaflet-root { width: 100%; height: 100%; }
 .map-fab {
   position: absolute; z-index: 1000;
-  right: 12px; bottom: 16px;
+  right: 12px; top: 12px;
   width: 46px; height: 46px; border-radius: 50%;
   border: none; background: #fff; box-shadow: var(--shadow);
-  font-size: 20px;
+  display: flex; align-items: center; justify-content: center;
 }
 /* 내 위치 버튼: 구글 줌 컨트롤(오른쪽 아래)과 겹치지 않게 오른쪽 위로 */
 .map-fab.locate { top: 12px; right: 12px; bottom: auto; }

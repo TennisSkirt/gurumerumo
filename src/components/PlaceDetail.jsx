@@ -168,7 +168,7 @@ function CommentForm({ place }) {
       <textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={2} placeholder={t('코멘트를 남겨보세요 :)', 'コメントを残そう :)')} />
       {photo && <div className="photo-grid"><div className="photo-thumb"><img src={photo} alt="" /><button type="button" className="photo-x" onClick={() => setPhoto(null)}>×</button></div></div>}
       <div className="comment-form__row">
-        <label className="mini-file">📷 {t('사진', '写真')}<input type="file" accept="image/*" onChange={onPhoto} hidden /></label>
+        <label className="mini-file"><UiIcon name="camera" size={17} /> {t('사진', '写真')}<input type="file" accept="image/*" onChange={onPhoto} hidden /></label>
         <button className="primary" onClick={submit} disabled={saving}>{saving ? '…' : t('남기기', '投稿')}</button>
       </div>
     </div>
@@ -214,7 +214,7 @@ export default function PlaceDetail({ place, onClose }) {
           <div className="sheet__head">
             <h3>{live.name}</h3>
             <span className="card__cat" style={{ background: c.color }}><CatIcon category={c.id} size={15} /> {t(c.label, c.ja)}</span>
-            <button className="icon-btn" onClick={() => setEditingPlace(true)} title={t('이름·카테고리 수정', '名前・カテゴリー編集')} aria-label={t('수정', '編集')}>✏️</button>
+            <button className="icon-btn" onClick={() => setEditingPlace(true)} title={t('이름·카테고리 수정', '名前・カテゴリー編集')} aria-label={t('수정', '編集')}><UiIcon name="edit" size={20} /></button>
           </div>
         )}
 
@@ -263,7 +263,7 @@ export default function PlaceDetail({ place, onClose }) {
           })}
         </ul>
 
-        <div className="comments-hd"><b>💬 {t('코멘트', 'コメント')} {comments.length > 0 && <span className="count">{comments.length}</span>}</b></div>
+        <div className="comments-hd"><b><UiIcon name="comment" size={17} /> {t('코멘트', 'コメント')} {comments.length > 0 && <span className="count">{comments.length}</span>}</b></div>
         <ul className="comments">
           {comments.map((cm) => {
             const m = resolveMember(cm.author)

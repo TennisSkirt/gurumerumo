@@ -6,6 +6,7 @@ import { catIconSrc, faceRoundSrc } from '../lib/asset.js'
 import { usePlaces } from '../store/PlacesContext.jsx'
 
 const SEOUL = { lat: 37.5665, lng: 126.978 }
+const SS = 4 // 슈퍼샘플링(고해상도로 그려 레티나에서도 선명하게)
 
 function loadImg(src) {
   return new Promise((resolve, reject) => {
@@ -26,7 +27,6 @@ function roundRect(ctx, x, y, w, h, r) {
   ctx.closePath()
 }
 
-// 참여자 → 얼굴 이미지 키 (1명=본인 아바타 / 2명 이상=커플)
 function faceKeyFor(place, resolveMember) {
   const ids = placeParticipants(place)
   if (ids.length >= 2) return 'couple'
@@ -34,8 +34,14 @@ function faceKeyFor(place, resolveMember) {
   return null
 }
 
-// 마커 = (사진 또는 카테고리 아이콘) 상자 + 위에 얼굴 아바타
-async function buildMarkerIcon(place, resolveMember) {
+// 줌 레벨 → 마커 배율 (확대하면 커지고 축소하면 작아짐)
+function zoomFactor(zoom) {
+  const z = typeof zoom === 'number' ? zoom : 15
+  return Math.min(1.8, Math.max(0.5, Math.pow(1.15, z - 15)))
+}
+
+// 마커 기본 이미지(고해상도)를 한 번만 생성 → { url, w, h } (논리 크기)
+async function buildMarkerBase(place, resolveMember) {
   const color = categoryOf(place.category).color
   const photo = placePhoto(place)
   const faceKey = faceKeyFor(place, resolveMember)
@@ -48,8 +54,11 @@ async function buildMarkerIcon(place, resolveMember) {
   const cx = w / 2
 
   const c = document.createElement('canvas')
-  c.width = w; c.height = h
+  c.width = w * SS; c.height = h * SS
   const ctx = c.getContext('2d')
+  ctx.scale(SS, SS) // 이후 논리 좌표로 그리되 4배 해상도로 렌더
+  ctx.imageSmoothingEnabled = true
+  ctx.imageSmoothingQuality = 'high'
 
   // 상자 테두리 + 꼬리 (그림자)
   ctx.save()
@@ -81,7 +90,7 @@ async function buildMarkerIcon(place, resolveMember) {
       const dw = img.width * s, dh = img.height * s
       ctx.drawImage(img, bd + (inner - dw) / 2, boxTop + bd + (inner - dh) / 2, dw, dh)
     }
-  } catch { /* 이미지 로드 실패 시 흰 상자만 */ }
+  } catch { /* 로드 실패 시 흰 상자만 */ }
   ctx.restore()
 
   // 얼굴 아바타 (상자 위)
@@ -92,28 +101,35 @@ async function buildMarkerIcon(place, resolveMember) {
     } catch { /* 얼굴 없으면 생략 */ }
   }
 
-  return {
-    url: c.toDataURL('image/png'),
-    scaledSize: new window.google.maps.Size(w, h),
-    anchor: new window.google.maps.Point(cx, h),
-  }
+  return { url: c.toDataURL('image/png'), w, h }
 }
 
-function PlaceMarker({ place, onSelect }) {
+function PlaceMarker({ place, onSelect, zoom }) {
   const { resolveMember } = usePlaces()
-  const [icon, setIcon] = useState(null)
+  const [base, setBase] = useState(null)
   const faceKey = faceKeyFor(place, resolveMember)
   const photo = placePhoto(place)
+
   useEffect(() => {
     let cancelled = false
-    buildMarkerIcon(place, resolveMember).then((ic) => { if (!cancelled) setIcon(ic) })
+    buildMarkerBase(place, resolveMember).then((b) => { if (!cancelled) setBase(b) })
     return () => { cancelled = true }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [photo, place.category, faceKey])
+
+  // 줌에 따라 표시 크기만 재계산 (이미지는 재생성 안 함)
+  const icon = useMemo(() => {
+    if (!base) return null
+    const f = zoomFactor(zoom)
+    return {
+      url: base.url,
+      scaledSize: new window.google.maps.Size(base.w * f, base.h * f),
+      anchor: new window.google.maps.Point((base.w * f) / 2, base.h * f),
+    }
+  }, [base, zoom])
+
   if (!icon) return null
-  return (
-    <Marker position={{ lat: place.lat, lng: place.lng }} icon={icon} onClick={() => onSelect(place)} />
-  )
+  return <Marker position={{ lat: place.lat, lng: place.lng }} icon={icon} onClick={() => onSelect(place)} />
 }
 
 // 장소가 처음 로드되면 지도를 그 장소들에 맞춰 한 번 이동
@@ -140,7 +156,7 @@ function LocateButton() {
   const locate = () => {
     if (!navigator.geolocation || !map) return
     navigator.geolocation.getCurrentPosition(
-      (pos) => { map.panTo({ lat: pos.coords.latitude, lng: pos.coords.longitude }); map.setZoom(15) },
+      (pos) => { map.panTo({ lat: pos.coords.latitude, lng: pos.coords.longitude }); map.setZoom(16) },
       () => alert('위치를 가져올 수 없어요.'),
       { enableHighAccuracy: true, timeout: 8000 },
     )
@@ -153,6 +169,7 @@ function LocateButton() {
 export default function MapView({ onSelect }) {
   const { places } = usePlaces()
   const loaded = useApiIsLoaded()
+  const [zoom, setZoom] = useState(places.length ? 14 : 11)
 
   const center = useMemo(
     () => (places.length ? { lat: places[0].lat, lng: places[0].lng } : SEOUL),
@@ -170,9 +187,14 @@ export default function MapView({ onSelect }) {
         zoomControl
         clickableIcons={false}
         style={{ width: '100%', height: '100%' }}
+        onCameraChanged={(ev) => {
+          // 반 레벨 단위로만 반영해 리렌더 최소화
+          const z = Math.round(ev.detail.zoom * 2) / 2
+          setZoom((prev) => (prev === z ? prev : z))
+        }}
       >
         {loaded && places.map((p) => (
-          <PlaceMarker key={p.id} place={p} onSelect={onSelect} />
+          <PlaceMarker key={p.id} place={p} onSelect={onSelect} zoom={zoom} />
         ))}
         <FitPlaces places={places} />
       </Map>

@@ -6,7 +6,7 @@ import StarRating from './StarRating.jsx'
 import { usePlaces } from '../store/PlacesContext.jsx'
 
 export default function PlaceList({ onSelect }) {
-  const { places, resolveMember } = usePlaces()
+  const { places, resolveMember, t } = usePlaces()
   const [cat, setCat] = useState('all')
   const [minStar, setMinStar] = useState(0)
 
@@ -18,11 +18,11 @@ export default function PlaceList({ onSelect }) {
 
   return (
     <div className="list">
-      <h2 className="screen-title">📋 우리가족 기록 {places.length > 0 && <span className="count">{places.length}</span>}</h2>
+      <h2 className="screen-title">{t('우리가족 기록', '家族の記録')} {places.length > 0 && <span className="count">{places.length}</span>}</h2>
 
       <div className="filters">
         <div className="chips">
-          <button className={'chip' + (cat === 'all' ? ' on' : '')} onClick={() => setCat('all')}>전체</button>
+          <button className={'chip' + (cat === 'all' ? ' on' : '')} onClick={() => setCat('all')}>{t('전체', 'すべて')}</button>
           {CATEGORIES.map((c) => (
             <button
               key={c.id}
@@ -30,22 +30,22 @@ export default function PlaceList({ onSelect }) {
               style={cat === c.id ? { '--chip': c.color } : undefined}
               onClick={() => setCat(c.id)}
             >
-              <CatIcon category={c.id} size={20} className="chip__ic" />{c.label}
+              <CatIcon category={c.id} size={20} className="chip__ic" />{t(c.label, c.ja)}
             </button>
           ))}
         </div>
         <label className="minstar">
-          별점 <select value={minStar} onChange={(e) => setMinStar(Number(e.target.value))}>
-            <option value={0}>전체</option>
-            <option value={3}>3★ 이상</option>
-            <option value={4}>4★ 이상</option>
-            <option value={5}>5★만</option>
+          {t('별점', '評価')} <select value={minStar} onChange={(e) => setMinStar(Number(e.target.value))}>
+            <option value={0}>{t('전체', 'すべて')}</option>
+            <option value={3}>{t('3★ 이상', '3★以上')}</option>
+            <option value={4}>{t('4★ 이상', '4★以上')}</option>
+            <option value={5}>{t('5★만', '5★のみ')}</option>
           </select>
         </label>
       </div>
 
       {filtered.length === 0 ? (
-        <div className="empty-note">조건에 맞는 장소가 없어요.</div>
+        <div className="empty-note">{t('조건에 맞는 장소가 없어요.', '条件に合う場所がありません。')}</div>
       ) : (
         <ul className="cards">
           {filtered.map((p) => {
@@ -67,7 +67,7 @@ export default function PlaceList({ onSelect }) {
                   <div className="card__body">
                     <div className="card__top">
                       <b className="card__name">{p.name}</b>
-                      <span className="card__cat" style={{ background: c.color }}><CatIcon category={c.id} size={14} /> {c.label}</span>
+                      <span className="card__cat" style={{ background: c.color }}><CatIcon category={c.id} size={14} /> {t(c.label, c.ja)}</span>
                     </div>
                     {lv.rating > 0 && <StarRating value={lv.rating} readOnly size={15} />}
                     {lv.memo && <p className="card__memo">{lv.memo}</p>}
@@ -77,7 +77,7 @@ export default function PlaceList({ onSelect }) {
                         {who.map((m) => m.label).join('·')}
                       </span>
                       {lv.visitedAt && <span>· {lv.visitedAt}</span>}
-                      {visits > 1 && <span className="visit-badge"><UiIcon name="revisit" size={13} /> {visits}번</span>}
+                      {visits > 1 && <span className="visit-badge"><UiIcon name="revisit" size={13} /> {t(`${visits}번`, `${visits}回`)}</span>}
                     </div>
                   </div>
                 </button>

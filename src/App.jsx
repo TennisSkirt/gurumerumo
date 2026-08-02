@@ -12,14 +12,14 @@ import { tabIconSrc } from './lib/asset.js'
 import { usePlaces } from './store/PlacesContext.jsx'
 
 const TABS = [
-  { id: 'map', label: '지도' },
-  { id: 'record', label: '기록' },
-  { id: 'list', label: '목록' },
-  { id: 'family', label: '가족' },
+  { id: 'map', ko: '지도', ja: '地図' },
+  { id: 'record', ko: '기록', ja: '記録' },
+  { id: 'list', ko: '목록', ja: '一覧' },
+  { id: 'family', ko: '가족', ja: '家族' },
 ]
 
 export default function App() {
-  const { firebaseReady, familyCode } = usePlaces()
+  const { firebaseReady, familyCode, t } = usePlaces()
   const [splashDone, setSplashDone] = useState(false)
   const [tab, setTab] = useState('map')
   const [selected, setSelected] = useState(null)
@@ -47,14 +47,14 @@ export default function App() {
       </main>
 
       <nav className="tabbar">
-        {TABS.map((t) => (
+        {TABS.map((tb) => (
           <button
-            key={t.id}
-            className={'tabbar__btn' + (tab === t.id ? ' on' : '')}
-            onClick={() => setTab(t.id)}
+            key={tb.id}
+            className={'tabbar__btn' + (tab === tb.id ? ' on' : '')}
+            onClick={() => setTab(tb.id)}
           >
-            <img className="tabbar__ic" src={tabIconSrc(t.id, tab === t.id)} alt="" width={28} height={28} />
-            <span className="tabbar__label">{t.label}</span>
+            <img className="tabbar__ic" src={tabIconSrc(tb.id, tab === tb.id)} alt="" width={28} height={28} />
+            <span className="tabbar__label">{t(tb.ko, tb.ja)}</span>
           </button>
         ))}
       </nav>

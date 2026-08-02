@@ -1,13 +1,20 @@
 // 장소 카테고리 — 지도 핀 색/아이콘 구분에 사용
 // color 는 핀·뱃지 색, emoji 는 아이콘(나중에 이미지로 교체 가능)
 export const CATEGORIES = [
-  { id: 'food',    label: '맛집',   emoji: '🍜', color: '#e8562c' },
-  { id: 'cafe',    label: '카페',   emoji: '☕', color: '#a9744f' },
-  { id: 'play',    label: '놀거리', emoji: '🎡', color: '#8e5bd0' },
-  { id: 'travel',  label: '여행',   emoji: '✈️', color: '#2f8fd0' },
-  { id: 'nature',  label: '자연',   emoji: '🌳', color: '#4e9a51' },
-  { id: 'etc',     label: '기타',   emoji: '📍', color: '#6b7280' },
+  { id: 'food',    label: '맛집',   ja: 'グルメ',   emoji: '🍜', color: '#e8562c' },
+  { id: 'cafe',    label: '카페',   ja: 'カフェ',   emoji: '☕', color: '#a9744f' },
+  { id: 'play',    label: '놀거리', ja: '遊び',     emoji: '🎡', color: '#8e5bd0' },
+  { id: 'travel',  label: '여행',   ja: '旅行',     emoji: '✈️', color: '#2f8fd0' },
+  { id: 'nature',  label: '자연',   ja: '自然',     emoji: '🌳', color: '#4e9a51' },
+  { id: 'etc',     label: '기타',   ja: 'その他',   emoji: '📍', color: '#6b7280' },
 ]
+
+// 카테고리 라벨(언어별)
+export function catLabel(cat, lang) {
+  const c = typeof cat === 'string' ? CATEGORY_MAP[cat] : cat
+  if (!c) return ''
+  return lang === 'ja' ? (c.ja || c.label) : c.label
+}
 
 export const CATEGORY_MAP = Object.fromEntries(CATEGORIES.map((c) => [c.id, c]))
 

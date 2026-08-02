@@ -3,7 +3,7 @@ import { Map, useMap, useApiIsLoaded } from '@vis.gl/react-google-maps'
 import { MarkerClusterer } from '@googlemaps/markerclusterer'
 import { categoryOf } from '../lib/categories.js'
 import { placePhoto, placeParticipants } from '../lib/places.js'
-import { catIconSrc, faceRoundSrc } from '../lib/asset.js'
+import { catIconSrc, faceRoundSrc, uiIconSrc } from '../lib/asset.js'
 import { usePlaces } from '../store/PlacesContext.jsx'
 
 const SEOUL = { lat: 37.5665, lng: 126.978 }
@@ -209,21 +209,24 @@ function FitPlaces({ places }) {
 
 function LocateButton() {
   const map = useMap('main')
+  const { t } = usePlaces()
   const locate = () => {
     if (!navigator.geolocation || !map) return
     navigator.geolocation.getCurrentPosition(
       (pos) => { map.panTo({ lat: pos.coords.latitude, lng: pos.coords.longitude }); map.setZoom(16) },
-      () => alert('위치를 가져올 수 없어요.'),
+      () => alert(t('위치를 가져올 수 없어요.', '現在地を取得できませんでした。')),
       { enableHighAccuracy: true, timeout: 8000 },
     )
   }
   return (
-    <button className="map-fab locate" onClick={locate} aria-label="내 위치" title="내 위치">🎯</button>
+    <button className="map-fab locate" onClick={locate} aria-label={t('내 위치', '現在地')}>
+      <img src={uiIconSrc('locate')} alt="" width={24} height={24} />
+    </button>
   )
 }
 
 export default function MapView({ onSelect }) {
-  const { places } = usePlaces()
+  const { places, t } = usePlaces()
   const loaded = useApiIsLoaded()
   const [zoom, setZoom] = useState(places.length ? 14 : 11)
 
@@ -256,9 +259,9 @@ export default function MapView({ onSelect }) {
       {places.length === 0 && (
         <div className="map-empty">
           <div className="map-empty__card">
-            <div className="map-empty__emoji">🗺️</div>
-            <b>아직 기록한 장소가 없어요</b>
-            <p>아래 <b>➕ 기록</b> 탭에서<br />첫 장소를 남겨보세요!</p>
+            <img className="map-empty__img" src={uiIconSrc('search')} alt="" width={44} height={44} />
+            <b>{t('아직 기록한 장소가 없어요', 'まだ記録した場所がありません')}</b>
+            <p>{t('아래 기록 탭에서', '下の「記録」タブから')}<br />{t('첫 장소를 남겨보세요!', '最初の場所を残してみましょう！')}</p>
           </div>
         </div>
       )}

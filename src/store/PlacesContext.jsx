@@ -17,6 +17,7 @@ const LS = {
   me: 'gurumerumo.me',
   code: 'gurumerumo.familyCode',
   members: 'gurumerumo.members',
+  lang: 'gurumerumo.lang',
 }
 
 function loadLocal(key, fallback) {
@@ -40,6 +41,12 @@ export function PlacesProvider({ children }) {
   const [me, setMeState] = useState(() => loadLocal(LS.me, null))
   const [familyCode, setFamilyCode] = useState(() => loadLocal(LS.code, null))
   const [members, setMembers] = useState(() => loadLocal(LS.members, DEFAULT_MEMBERS))
+  const [lang, setLangState] = useState(() => loadLocal(LS.lang, 'ko'))
+
+  useEffect(() => { localStorage.setItem(LS.lang, JSON.stringify(lang)) }, [lang])
+  const setLang = useCallback((l) => setLangState(l), [])
+  // 번역 헬퍼: t('한국어', '日本語')
+  const t = useCallback((ko, ja) => (lang === 'ja' ? (ja ?? ko) : ko), [lang])
 
   const cloud = firebaseReady && Boolean(familyCode)
 
@@ -232,6 +239,7 @@ export function PlacesProvider({ children }) {
   const value = {
     places, me, familyCode, members,
     cloud, firebaseReady,
+    lang, setLang, t,
     membersById, resolveMember, saveMembers,
     addPlace, addVisit, updateVisit, deleteVisit, updatePlace, deletePlace,
     addComment, deleteComment,

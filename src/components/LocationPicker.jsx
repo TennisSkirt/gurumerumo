@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Map, Marker, useMap } from '@vis.gl/react-google-maps'
 import { searchPlaces } from '../lib/geocode.js'
+import { usePlaces } from '../store/PlacesContext.jsx'
 
 const SEOUL = { lat: 37.5665, lng: 126.978 }
 
@@ -17,6 +18,7 @@ function Recenter({ coords }) {
 }
 
 export default function LocationPicker({ coords, onPick, onName }) {
+  const { t } = usePlaces()
   const [q, setQ] = useState('')
   const [results, setResults] = useState([])
   const [busy, setBusy] = useState(false)
@@ -32,9 +34,9 @@ export default function LocationPicker({ coords, onPick, onName }) {
     try {
       const found = await searchPlaces(q, { signal: ctrl.signal })
       setResults(found)
-      if (found.length === 0) setErr('검색 결과가 없어요. 지도를 눌러 직접 찍어도 돼요.')
+      if (found.length === 0) setErr(t('검색 결과가 없어요. 지도를 눌러 직접 찍어도 돼요.', '検索結果がありません。地図をタップして指定できます。'))
     } catch (e2) {
-      if (e2.name !== 'AbortError') setErr('검색 중 문제가 생겼어요.')
+      if (e2.name !== 'AbortError') setErr(t('검색 중 문제가 생겼어요.', '検索中に問題が発生しました。'))
     } finally {
       setBusy(false)
     }
@@ -57,9 +59,9 @@ export default function LocationPicker({ coords, onPick, onName }) {
           value={q}
           onChange={(e) => setQ(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); runSearch() } }}
-          placeholder="가게·장소 이름으로 검색 (예: 성수동 카페)"
+          placeholder={t('가게·장소 이름으로 검색 (예: 성수동 카페)', '店・場所名で検索（例: 道頓堀 たこ焼き）')}
         />
-        <button type="button" onClick={runSearch} disabled={busy}>{busy ? '…' : '검색'}</button>
+        <button type="button" onClick={runSearch} disabled={busy}>{busy ? '…' : t('검색', '検索')}</button>
       </div>
       {err && <div className="picker-err">{err}</div>}
       {results.length > 0 && (
@@ -93,7 +95,7 @@ export default function LocationPicker({ coords, onPick, onName }) {
           {coords && <Marker position={coords} />}
           <Recenter coords={coords} />
         </Map>
-        <div className="picker-hint">지도를 눌러 위치를 콕 찍어보세요</div>
+        <div className="picker-hint">{t('지도를 눌러 위치를 콕 찍어보세요', '地図をタップして場所を指定')}</div>
       </div>
     </div>
   )

@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { CATEGORIES, categoryOf } from '../lib/categories.js'
+import { visitsOf } from '../lib/places.js'
 import { usePlaces } from '../store/PlacesContext.jsx'
 
 export default function FamilyPage({ onSelect, onOpenSettings }) {
@@ -8,16 +9,20 @@ export default function FamilyPage({ onSelect, onOpenSettings }) {
   const stats = useMemo(() => {
     const byCat = {}
     const byMember = {}
-    let rated = null
+    let best = null // { place, rating } — 가장 높은 별점의 방문
+    let totalVisits = 0
     for (const p of places) {
       byCat[p.category] = (byCat[p.category] || 0) + 1
-      byMember[p.author] = (byMember[p.author] || 0) + 1
-      if (p.rating && (!rated || p.rating > rated.rating)) rated = p
+      for (const v of visitsOf(p)) {
+        totalVisits++
+        if (v.author) byMember[v.author] = (byMember[v.author] || 0) + 1
+        if (v.rating && (!best || v.rating > best.rating)) best = { place: p, rating: v.rating }
+      }
     }
     const ranking = Object.entries(byMember)
       .map(([id, n]) => ({ id, n }))
       .sort((a, b) => b.n - a.n)
-    return { byCat, ranking, rated, total: places.length }
+    return { byCat, ranking, best, total: places.length, totalVisits }
   }, [places])
 
   return (
@@ -47,18 +52,18 @@ export default function FamilyPage({ onSelect, onOpenSettings }) {
         <div className="panel__title">한눈에 보기</div>
         <div className="stat-grid">
           <div className="stat"><b>{stats.total}</b><span>기록한 장소</span></div>
-          <div className="stat"><b>{Object.keys(stats.byCat).length}</b><span>카테고리</span></div>
+          <div className="stat"><b>{stats.totalVisits}</b><span>총 방문</span></div>
           <div className="stat"><b>{stats.ranking.length}</b><span>참여 가족</span></div>
         </div>
       </section>
 
-      {stats.rated && (
+      {stats.best && (
         <section className="panel">
           <div className="panel__title">⭐ 우리 가족 최애</div>
-          <button className="fav" onClick={() => onSelect(stats.rated)}>
-            <span className="fav__emoji">{categoryOf(stats.rated.category).emoji}</span>
-            <span className="fav__name">{stats.rated.name}</span>
-            <span className="fav__star">{'★'.repeat(stats.rated.rating)}</span>
+          <button className="fav" onClick={() => onSelect(stats.best.place)}>
+            <span className="fav__emoji">{categoryOf(stats.best.place.category).emoji}</span>
+            <span className="fav__name">{stats.best.place.name}</span>
+            <span className="fav__star">{'★'.repeat(stats.best.rating)}</span>
           </button>
         </section>
       )}

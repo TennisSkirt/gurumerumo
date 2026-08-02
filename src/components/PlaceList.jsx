@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { CATEGORIES, categoryOf } from '../lib/categories.js'
+import { latestVisit, latestRating, placePhoto, visitCount } from '../lib/places.js'
 import StarRating from './StarRating.jsx'
 import { usePlaces } from '../store/PlacesContext.jsx'
 
@@ -11,12 +12,12 @@ export default function PlaceList({ onSelect }) {
   const filtered = useMemo(() => {
     return places
       .filter((p) => (cat === 'all' ? true : p.category === cat))
-      .filter((p) => (p.rating || 0) >= minStar)
+      .filter((p) => latestRating(p) >= minStar)
   }, [places, cat, minStar])
 
   return (
     <div className="list">
-      <h2 className="screen-title">📋 우리 가족 장소 {places.length > 0 && <span className="count">{places.length}</span>}</h2>
+      <h2 className="screen-title">📋 우리가족 기록 {places.length > 0 && <span className="count">{places.length}</span>}</h2>
 
       <div className="filters">
         <div className="chips">
@@ -48,12 +49,15 @@ export default function PlaceList({ onSelect }) {
         <ul className="cards">
           {filtered.map((p) => {
             const c = categoryOf(p.category)
-            const m = resolveMember(p.author)
+            const lv = latestVisit(p)
+            const m = resolveMember(lv.author)
+            const photo = placePhoto(p)
+            const visits = visitCount(p)
             return (
               <li key={p.id}>
                 <button className="card" onClick={() => onSelect(p)}>
-                  {p.photo ? (
-                    <img className="card__thumb" src={p.photo} alt="" />
+                  {photo ? (
+                    <img className="card__thumb" src={photo} alt="" />
                   ) : (
                     <div className="card__thumb card__thumb--ph" style={{ background: c.color + '22' }}>
                       <span>{c.emoji}</span>
@@ -64,11 +68,12 @@ export default function PlaceList({ onSelect }) {
                       <b className="card__name">{p.name}</b>
                       <span className="card__cat" style={{ background: c.color }}>{c.emoji} {c.label}</span>
                     </div>
-                    {p.rating > 0 && <StarRating value={p.rating} readOnly size={15} />}
-                    {p.memo && <p className="card__memo">{p.memo}</p>}
+                    {lv.rating > 0 && <StarRating value={lv.rating} readOnly size={15} />}
+                    {lv.memo && <p className="card__memo">{lv.memo}</p>}
                     <div className="card__meta">
                       <span>{m.emoji} {m.label}</span>
-                      {p.visitedAt && <span>· {p.visitedAt}</span>}
+                      {lv.visitedAt && <span>· {lv.visitedAt}</span>}
+                      {visits > 1 && <span className="visit-badge">🔁 {visits}번 방문</span>}
                     </div>
                   </div>
                 </button>

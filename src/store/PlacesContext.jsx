@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react'
 import { firebaseReady, db } from '../lib/firebase.js'
 import { DEFAULT_MEMBERS, fallbackMember, newMemberId } from '../lib/members.js'
+import { visitsOf } from '../lib/places.js'
 
 // ─────────────────────────────────────────────────────────────
 // 이중 모드 저장소
@@ -101,13 +102,49 @@ export function PlacesProvider({ children }) {
     [membersById],
   )
 
+  // 새 장소 등록 — 입력 필드를 첫 방문(visits[0])으로 감싼다
   const addPlace = useCallback(async (place) => {
-    const entry = { ...place, createdAt: Date.now() }
+    const now = Date.now()
+    const visit = {
+      rating: place.rating || 0,
+      photo: place.photo || null,
+      memo: place.memo || '',
+      visitedAt: place.visitedAt || '',
+      author: place.author || null,
+      createdAt: now,
+    }
+    const entry = {
+      name: place.name,
+      category: place.category,
+      lat: place.lat,
+      lng: place.lng,
+      createdAt: now,
+      visits: [visit],
+    }
     if (cloud) {
       const { collection, addDoc } = await import('firebase/firestore')
       await addDoc(collection(db, 'places', familyCode, 'spots'), entry)
     } else {
       setPlaces((prev) => [{ id: crypto.randomUUID(), ...entry }, ...prev])
+    }
+  }, [cloud, familyCode])
+
+  // 재방문 — 기존 장소에 방문 기록 한 건 추가
+  const addVisit = useCallback(async (place, visit) => {
+    const v = {
+      rating: visit.rating || 0,
+      photo: visit.photo || null,
+      memo: visit.memo || '',
+      visitedAt: visit.visitedAt || '',
+      author: visit.author || null,
+      createdAt: Date.now(),
+    }
+    const nextVisits = [...visitsOf(place), v]
+    if (cloud) {
+      const { doc, updateDoc } = await import('firebase/firestore')
+      await updateDoc(doc(db, 'places', familyCode, 'spots', place.id), { visits: nextVisits })
+    } else {
+      setPlaces((prev) => prev.map((p) => (p.id === place.id ? { ...p, visits: nextVisits } : p)))
     }
   }, [cloud, familyCode])
 
@@ -160,7 +197,7 @@ export function PlacesProvider({ children }) {
     places, me, familyCode, members,
     cloud, firebaseReady,
     membersById, resolveMember, saveMembers,
-    addPlace, updatePlace, deletePlace,
+    addPlace, addVisit, updatePlace, deletePlace,
     setMe, createFamily, joinFamily, leaveFamily,
     newMemberId,
   }

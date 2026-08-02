@@ -100,7 +100,7 @@ export default function RecordForm({ onDone }) {
 
       <div className="field">
         <span>별점</span>
-        <StarRating value={rating} onChange={setRating} />
+        <StarRating value={rating} onChange={setRating} size={40} />
       </div>
 
       <label className="field">

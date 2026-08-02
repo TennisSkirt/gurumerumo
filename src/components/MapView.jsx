@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Map, Marker, useMap, useApiIsLoaded } from '@vis.gl/react-google-maps'
 import { categoryOf } from '../lib/categories.js'
+import { placePhoto } from '../lib/places.js'
 import { usePlaces } from '../store/PlacesContext.jsx'
 
 const SEOUL = { lat: 37.5665, lng: 126.978 }
@@ -88,16 +89,17 @@ function buildPhotoIcon(photo, categoryId) {
 
 // 장소 한 개의 마커 — 사진 있으면 썸네일 핀, 없으면 카테고리 핀
 function PlaceMarker({ place, onSelect }) {
+  const photo = placePhoto(place)
   const [icon, setIcon] = useState(() => categoryIcon(place.category))
   useEffect(() => {
     let cancelled = false
-    if (place.photo) {
-      buildPhotoIcon(place.photo, place.category).then((ic) => { if (!cancelled) setIcon(ic) })
+    if (photo) {
+      buildPhotoIcon(photo, place.category).then((ic) => { if (!cancelled) setIcon(ic) })
     } else {
       setIcon(categoryIcon(place.category))
     }
     return () => { cancelled = true }
-  }, [place.photo, place.category])
+  }, [photo, place.category])
   return (
     <Marker
       position={{ lat: place.lat, lng: place.lng }}

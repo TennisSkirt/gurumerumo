@@ -240,11 +240,11 @@ export default function MapView({ onSelect }) {
         <FitPlaces places={places} />
       </Map>
       <LocateButton />
+      <img className="map-mascot" src={characterSrc('husband')} alt="" />
 
       {places.length === 0 && (
         <div className="map-empty">
           <div className="map-empty__card">
-            <img className="map-empty__char" src={characterSrc('husband')} alt="" />
             <b>{t('아직 기록한 장소가 없어요', 'まだ記録した場所がありません')}</b>
             <p>{t('아래 기록 탭에서', '下の「記録」タブから')}<br />{t('첫 장소를 남겨보세요!', '最初の場所を残してみましょう！')}</p>
           </div>

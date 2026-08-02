@@ -2,7 +2,6 @@ import { useState } from 'react'
 import LocationPicker from './LocationPicker.jsx'
 import StarRating from './StarRating.jsx'
 import { CATEGORIES } from '../lib/categories.js'
-import { MEMBERS, memberOf } from '../lib/members.js'
 import { compressImage } from '../lib/image.js'
 import { usePlaces } from '../store/PlacesContext.jsx'
 
@@ -13,7 +12,7 @@ function todayStr() {
 }
 
 export default function RecordForm({ onDone }) {
-  const { addPlace, me } = usePlaces()
+  const { addPlace, me, members, resolveMember } = usePlaces()
   const [name, setName] = useState('')
   const [category, setCategory] = useState('food')
   const [rating, setRating] = useState(0)
@@ -21,7 +20,7 @@ export default function RecordForm({ onDone }) {
   const [photo, setPhoto] = useState(null)
   const [visitedAt, setVisitedAt] = useState(todayStr())
   const [memo, setMemo] = useState('')
-  const [author, setAuthor] = useState(me || MEMBERS[0].id)
+  const [author, setAuthor] = useState(me || members[0]?.id)
   const [saving, setSaving] = useState(false)
 
   const pick = (lat, lng) => setCoords({ lat, lng })
@@ -118,7 +117,7 @@ export default function RecordForm({ onDone }) {
       <div className="field">
         <span>누가 기록하나요?</span>
         <div className="chips">
-          {MEMBERS.map((m) => (
+          {members.map((m) => (
             <button
               type="button"
               key={m.id}
@@ -137,7 +136,7 @@ export default function RecordForm({ onDone }) {
       </label>
 
       <button className="save-btn" type="submit" disabled={!canSave}>
-        {saving ? '저장 중…' : `${memberOf(author).emoji} 이 장소 기록하기`}
+        {saving ? '저장 중…' : `${resolveMember(author).emoji} 이 장소 기록하기`}
       </button>
     </form>
   )

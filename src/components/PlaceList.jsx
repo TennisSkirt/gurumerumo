@@ -1,11 +1,10 @@
 import { useMemo, useState } from 'react'
 import { CATEGORIES, categoryOf } from '../lib/categories.js'
-import { memberOf } from '../lib/members.js'
 import StarRating from './StarRating.jsx'
 import { usePlaces } from '../store/PlacesContext.jsx'
 
 export default function PlaceList({ onSelect }) {
-  const { places } = usePlaces()
+  const { places, resolveMember } = usePlaces()
   const [cat, setCat] = useState('all')
   const [minStar, setMinStar] = useState(0)
 
@@ -49,7 +48,7 @@ export default function PlaceList({ onSelect }) {
         <ul className="cards">
           {filtered.map((p) => {
             const c = categoryOf(p.category)
-            const m = memberOf(p.author)
+            const m = resolveMember(p.author)
             return (
               <li key={p.id}>
                 <button className="card" onClick={() => onSelect(p)}>

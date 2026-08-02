@@ -1,11 +1,13 @@
-import { createContext, useContext, useEffect, useState, useCallback } from 'react'
+import { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react'
 import { firebaseReady, db } from '../lib/firebase.js'
+import { DEFAULT_MEMBERS, fallbackMember, newMemberId } from '../lib/members.js'
 
 // ─────────────────────────────────────────────────────────────
 // 이중 모드 저장소
-//   cloud  = firebaseReady && familyCode  → Firestore places/{code}/spots 실시간
+//   cloud  = firebaseReady && familyCode  → Firestore places/{code}(가족문서)+/spots 실시간
 //   local  = 그 외                         → localStorage (기기별)
-// me / familyCode 는 항상 로컬(기기별 정체성).
+// me 는 항상 로컬(이 기기의 사용자가 누구인지). familyCode 도 로컬.
+// 구성원(members)은 가족이 공유해야 하므로 가족 문서 places/{code}.members 에 저장.
 // ─────────────────────────────────────────────────────────────
 const PlacesContext = createContext(null)
 
@@ -13,6 +15,7 @@ const LS = {
   places: 'gurumerumo.places',
   me: 'gurumerumo.me',
   code: 'gurumerumo.familyCode',
+  members: 'gurumerumo.members',
 }
 
 function loadLocal(key, fallback) {
@@ -35,6 +38,7 @@ export function PlacesProvider({ children }) {
   const [places, setPlaces] = useState(() => loadLocal(LS.places, []))
   const [me, setMeState] = useState(() => loadLocal(LS.me, null))
   const [familyCode, setFamilyCode] = useState(() => loadLocal(LS.code, null))
+  const [members, setMembers] = useState(() => loadLocal(LS.members, DEFAULT_MEMBERS))
 
   const cloud = firebaseReady && Boolean(familyCode)
 
@@ -45,12 +49,15 @@ export function PlacesProvider({ children }) {
     else localStorage.removeItem(LS.code)
   }, [familyCode])
 
-  // 로컬 모드: places 영속
+  // 로컬 모드: places / members 영속
   useEffect(() => {
     if (!cloud) localStorage.setItem(LS.places, JSON.stringify(places))
   }, [places, cloud])
+  useEffect(() => {
+    if (!cloud) localStorage.setItem(LS.members, JSON.stringify(members))
+  }, [members, cloud])
 
-  // 클라우드 모드: Firestore 실시간 구독
+  // 클라우드 모드: spots 실시간 구독
   useEffect(() => {
     if (!cloud) return
     let unsub = () => {}
@@ -64,6 +71,35 @@ export function PlacesProvider({ children }) {
     })()
     return () => unsub()
   }, [cloud, familyCode])
+
+  // 클라우드 모드: 가족 문서(구성원) 실시간 구독. members 필드 없으면 기본값 유지.
+  useEffect(() => {
+    if (!cloud) return
+    let unsub = () => {}
+    ;(async () => {
+      const { doc, onSnapshot } = await import('firebase/firestore')
+      unsub = onSnapshot(
+        doc(db, 'places', familyCode),
+        (snap) => {
+          const data = snap.data()
+          if (data?.members?.length) setMembers(data.members)
+          else setMembers(DEFAULT_MEMBERS)
+        },
+        // 규칙이 아직 가족문서를 허용 안 하면 조용히 기본 구성원 유지
+        () => setMembers(DEFAULT_MEMBERS),
+      )
+    })()
+    return () => unsub()
+  }, [cloud, familyCode])
+
+  const membersById = useMemo(
+    () => Object.fromEntries(members.map((m) => [m.id, m])),
+    [members],
+  )
+  const resolveMember = useCallback(
+    (id) => membersById[id] || fallbackMember(id),
+    [membersById],
+  )
 
   const addPlace = useCallback(async (place) => {
     const entry = { ...place, createdAt: Date.now() }
@@ -93,6 +129,15 @@ export function PlacesProvider({ children }) {
     }
   }, [cloud, familyCode])
 
+  // 구성원 목록 통째로 저장(가족 문서에 공유). 설정 화면에서 편집 후 커밋.
+  const saveMembers = useCallback(async (next) => {
+    setMembers(next) // 즉시 반영(옵티미스틱)
+    if (cloud) {
+      const { doc, setDoc } = await import('firebase/firestore')
+      await setDoc(doc(db, 'places', familyCode), { members: next }, { merge: true })
+    }
+  }, [cloud, familyCode])
+
   const setMe = useCallback((id) => setMeState(id), [])
 
   const createFamily = useCallback(() => {
@@ -108,13 +153,16 @@ export function PlacesProvider({ children }) {
   const leaveFamily = useCallback(() => {
     setFamilyCode(null)
     setPlaces(loadLocal(LS.places, []))
+    setMembers(loadLocal(LS.members, DEFAULT_MEMBERS))
   }, [])
 
   const value = {
-    places, me, familyCode,
+    places, me, familyCode, members,
     cloud, firebaseReady,
+    membersById, resolveMember, saveMembers,
     addPlace, updatePlace, deletePlace,
     setMe, createFamily, joinFamily, leaveFamily,
+    newMemberId,
   }
   return <PlacesContext.Provider value={value}>{children}</PlacesContext.Provider>
 }

@@ -1,10 +1,9 @@
 import { useMemo } from 'react'
 import { CATEGORIES, categoryOf } from '../lib/categories.js'
-import { MEMBERS, memberOf } from '../lib/members.js'
 import { usePlaces } from '../store/PlacesContext.jsx'
 
-export default function FamilyPage({ onSelect }) {
-  const { places, me, setMe, cloud, familyCode, leaveFamily } = usePlaces()
+export default function FamilyPage({ onSelect, onOpenSettings }) {
+  const { places, me, setMe, members, resolveMember, cloud, familyCode } = usePlaces()
 
   const stats = useMemo(() => {
     const byCat = {}
@@ -28,7 +27,7 @@ export default function FamilyPage({ onSelect }) {
       <section className="panel">
         <div className="panel__title">나는 누구?</div>
         <div className="chips">
-          {MEMBERS.map((m) => (
+          {members.map((m) => (
             <button
               key={m.id}
               className={'chip' + (me === m.id ? ' on' : '')}
@@ -38,7 +37,10 @@ export default function FamilyPage({ onSelect }) {
             </button>
           ))}
         </div>
-        <p className="hint-sm">기록할 때 기본으로 이 사람이 선택돼요.</p>
+        <p className="hint-sm">
+          기록할 때 기본으로 이 사람이 선택돼요.{' '}
+          <button className="link-btn" onClick={onOpenSettings}>구성원 추가·편집 ⚙️</button>
+        </p>
       </section>
 
       <section className="panel">
@@ -85,7 +87,7 @@ export default function FamilyPage({ onSelect }) {
           <div className="panel__title">🏆 기록 랭킹</div>
           <ol className="ranking">
             {stats.ranking.map((r, i) => {
-              const m = memberOf(r.id)
+              const m = resolveMember(r.id)
               return (
                 <li key={r.id}>
                   <span className="ranking__medal">{['🥇', '🥈', '🥉'][i] || `${i + 1}`}</span>
@@ -101,10 +103,10 @@ export default function FamilyPage({ onSelect }) {
       <section className="panel">
         <div className="panel__title">가족 공유</div>
         {cloud ? (
-          <>
-            <p className="hint-sm">가족 코드 <b className="code">{familyCode}</b> 로 연결됨. 가족에게 이 코드를 알려주면 같은 지도를 봐요.</p>
-            <button className="ghost" onClick={leaveFamily}>연결 해제</button>
-          </>
+          <p className="hint-sm">
+            가족 코드 <b className="code">{familyCode}</b> 로 연결됨. 가족에게 이 코드를 알려주면 같은 지도를 봐요.
+            연결 해제·구성원 관리는 <button className="link-btn" onClick={onOpenSettings}>설정 ⚙️</button> 에서.
+          </p>
         ) : (
           <p className="hint-sm">지금은 <b>이 기기에만</b> 저장돼요. Firebase를 연결하면 가족이 실시간으로 같은 지도를 볼 수 있어요.</p>
         )}

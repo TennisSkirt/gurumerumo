@@ -39,7 +39,13 @@ button { font-family: inherit; cursor: pointer; }
   padding-top: env(safe-area-inset-top);
   box-sizing: content-box;
 }
+.topbar { position: relative; }
 .topbar__logo { font-family: 'Jua', sans-serif; font-size: 20px; letter-spacing: .5px; }
+.topbar__gear {
+  position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+  border: none; background: rgba(255,255,255,.18); color: #fff;
+  width: 34px; height: 34px; border-radius: 50%; font-size: 17px; line-height: 1;
+}
 
 /* 화면 영역 */
 .screen { flex: 1 1 auto; overflow-y: auto; position: relative; }
@@ -179,6 +185,22 @@ button { font-family: inherit; cursor: pointer; }
 .sheet__actions .danger { color: #d23f3f; border-color: #f2c4c4; }
 .sheet__close { width: 100%; margin-top: 10px; padding: 13px; border: none; background: var(--brand-soft); color: var(--brand); border-radius: 12px; font-weight: 700; }
 .ghost { background: var(--card); }
+
+/* ── 설정 시트 ── */
+.sheet__title { font-family: 'Jua', sans-serif; font-size: 20px; margin: 0 0 14px; }
+.set-section { margin-bottom: 20px; }
+.set-section__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.set-section__head span { font-weight: 700; }
+.add-member { border: 1.5px solid var(--brand); background: var(--brand-soft); color: var(--brand); border-radius: 999px; padding: 6px 12px; font-size: 13px; font-weight: 700; }
+.member-edit-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.member-edit { display: flex; align-items: center; gap: 8px; }
+.emoji-select { flex: 0 0 auto; width: 56px; padding: 9px 4px; border: 1.5px solid var(--line); border-radius: 10px; font-size: 18px; text-align: center; background: var(--card); font-family: inherit; }
+.member-name { flex: 1; min-width: 0; padding: 10px 12px; border: 1.5px solid var(--line); border-radius: 10px; font-size: 15px; font-family: inherit; background: var(--card); color: var(--ink); }
+.member-del { flex: 0 0 auto; width: 40px; height: 40px; border: 1.5px solid var(--line); background: var(--card); border-radius: 10px; font-size: 16px; }
+.member-del:disabled { opacity: .35; }
+.leave-btn { display: inline-block; width: auto; padding: 9px 14px; border: 1.5px solid var(--line); border-radius: 10px; font-size: 13px; margin-top: 8px; color: #d23f3f; border-color: #f2c4c4; }
+.sheet__actions .primary { background: var(--brand); color: #fff; border-color: var(--brand); }
+.link-btn { border: none; background: none; color: var(--brand); font-weight: 700; font-size: inherit; font-family: inherit; padding: 0; text-decoration: underline; cursor: pointer; }
 
 /* ── 가족 ── */
 .family { padding: 0 16px 24px; }

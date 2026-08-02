@@ -5,6 +5,7 @@ import PlaceList from './components/PlaceList.jsx'
 import FamilyPage from './components/FamilyPage.jsx'
 import PlaceDetail from './components/PlaceDetail.jsx'
 import FamilyCodeScreen from './components/FamilyCodeScreen.jsx'
+import SettingsSheet from './components/SettingsSheet.jsx'
 import { usePlaces } from './store/PlacesContext.jsx'
 
 const TABS = [
@@ -18,6 +19,7 @@ export default function App() {
   const { firebaseReady, familyCode } = usePlaces()
   const [tab, setTab] = useState('map')
   const [selected, setSelected] = useState(null)
+  const [showSettings, setShowSettings] = useState(false)
 
   // 클라우드 모드인데 아직 가족 코드가 없으면 참여 화면
   if (firebaseReady && !familyCode) return <FamilyCodeScreen />
@@ -26,13 +28,14 @@ export default function App() {
     <div className="app">
       <header className="topbar">
         <span className="topbar__logo">🗺️ ぐるめるも</span>
+        <button className="topbar__gear" onClick={() => setShowSettings(true)} aria-label="설정">⚙️</button>
       </header>
 
       <main className="screen">
         {tab === 'map' && <MapView onSelect={setSelected} />}
         {tab === 'record' && <RecordForm onDone={() => setTab('map')} />}
         {tab === 'list' && <PlaceList onSelect={setSelected} />}
-        {tab === 'family' && <FamilyPage onSelect={setSelected} />}
+        {tab === 'family' && <FamilyPage onSelect={setSelected} onOpenSettings={() => setShowSettings(true)} />}
       </main>
 
       <nav className="tabbar">
@@ -49,6 +52,7 @@ export default function App() {
       </nav>
 
       {selected && <PlaceDetail place={selected} onClose={() => setSelected(null)} />}
+      {showSettings && <SettingsSheet onClose={() => setShowSettings(false)} />}
     </div>
   )
 }

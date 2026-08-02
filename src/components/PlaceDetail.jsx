@@ -1,14 +1,13 @@
 import { categoryOf } from '../lib/categories.js'
-import { memberOf } from '../lib/members.js'
 import StarRating from './StarRating.jsx'
 import { usePlaces } from '../store/PlacesContext.jsx'
 
 // 장소 상세 바텀시트
 export default function PlaceDetail({ place, onClose }) {
-  const { deletePlace } = usePlaces()
+  const { deletePlace, resolveMember } = usePlaces()
   if (!place) return null
   const c = categoryOf(place.category)
-  const m = memberOf(place.author)
+  const m = resolveMember(place.author)
 
   const remove = async () => {
     if (!confirm(`"${place.name}" 기록을 삭제할까요?`)) return

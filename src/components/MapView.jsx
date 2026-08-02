@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Map, Marker, useMap, useApiIsLoaded } from '@vis.gl/react-google-maps'
+import { Map, useMap, useApiIsLoaded } from '@vis.gl/react-google-maps'
+import { MarkerClusterer } from '@googlemaps/markerclusterer'
 import { categoryOf } from '../lib/categories.js'
 import { placePhoto, placeParticipants } from '../lib/places.js'
 import { catIconSrc, faceRoundSrc } from '../lib/asset.js'
 import { usePlaces } from '../store/PlacesContext.jsx'
 
 const SEOUL = { lat: 37.5665, lng: 126.978 }
-const SS = 4 // 슈퍼샘플링(고해상도로 그려 레티나에서도 선명하게)
+const SS = 4 // 슈퍼샘플링(고해상도)
 
 function loadImg(src) {
   return new Promise((resolve, reject) => {
@@ -34,33 +35,30 @@ function faceKeyFor(place, resolveMember) {
   return null
 }
 
-// 줌 레벨 → 마커 배율 (확대하면 커지고 축소하면 작아짐)
 function zoomFactor(zoom) {
   const z = typeof zoom === 'number' ? zoom : 15
   return Math.min(1.8, Math.max(0.5, Math.pow(1.15, z - 15)))
 }
 
-// 마커 기본 이미지(고해상도)를 한 번만 생성 → { url, w, h } (논리 크기)
 async function buildMarkerBase(place, resolveMember) {
   const color = categoryOf(place.category).color
   const photo = placePhoto(place)
   const faceKey = faceKeyFor(place, resolveMember)
 
-  const inner = 52, bd = 3, boxOuter = inner + bd * 2 // 58
+  const inner = 52, bd = 3, boxOuter = inner + bd * 2
   const face = 38, overlap = 15, tail = 9
   const w = boxOuter
-  const boxTop = face - overlap // 23
-  const h = boxTop + boxOuter + tail // 90
+  const boxTop = face - overlap
+  const h = boxTop + boxOuter + tail
   const cx = w / 2
 
   const c = document.createElement('canvas')
   c.width = w * SS; c.height = h * SS
   const ctx = c.getContext('2d')
-  ctx.scale(SS, SS) // 이후 논리 좌표로 그리되 4배 해상도로 렌더
+  ctx.scale(SS, SS)
   ctx.imageSmoothingEnabled = true
   ctx.imageSmoothingQuality = 'high'
 
-  // 상자 테두리 + 꼬리 (그림자)
   ctx.save()
   ctx.shadowColor = 'rgba(0,0,0,.3)'; ctx.shadowBlur = 4; ctx.shadowOffsetY = 2
   ctx.fillStyle = color
@@ -72,7 +70,6 @@ async function buildMarkerBase(place, resolveMember) {
   ctx.closePath(); ctx.fill()
   ctx.restore()
 
-  // 내부: 사진(cover) 또는 카테고리 아이콘(흰 배경 + contain)
   ctx.save()
   roundRect(ctx, bd, boxTop + bd, inner, inner, 11); ctx.clip()
   ctx.fillStyle = '#fff'
@@ -90,49 +87,108 @@ async function buildMarkerBase(place, resolveMember) {
       const dw = img.width * s, dh = img.height * s
       ctx.drawImage(img, bd + (inner - dw) / 2, boxTop + bd + (inner - dh) / 2, dw, dh)
     }
-  } catch { /* 로드 실패 시 흰 상자만 */ }
+  } catch { /* noop */ }
   ctx.restore()
 
-  // 얼굴 아바타 (상자 위)
   if (faceKey) {
     try {
       const f = await loadImg(faceRoundSrc(faceKey))
       ctx.drawImage(f, (w - face) / 2, 0, face, face)
-    } catch { /* 얼굴 없으면 생략 */ }
+    } catch { /* noop */ }
   }
-
   return { url: c.toDataURL('image/png'), w, h }
 }
 
-function PlaceMarker({ place, onSelect, zoom }) {
-  const { resolveMember } = usePlaces()
-  const [base, setBase] = useState(null)
-  const faceKey = faceKeyFor(place, resolveMember)
-  const photo = placePhoto(place)
-
-  useEffect(() => {
-    let cancelled = false
-    buildMarkerBase(place, resolveMember).then((b) => { if (!cancelled) setBase(b) })
-    return () => { cancelled = true }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [photo, place.category, faceKey])
-
-  // 줌에 따라 표시 크기만 재계산 (이미지는 재생성 안 함)
-  const icon = useMemo(() => {
-    if (!base) return null
-    const f = zoomFactor(zoom)
-    return {
-      url: base.url,
-      scaledSize: new window.google.maps.Size(base.w * f, base.h * f),
-      anchor: new window.google.maps.Point((base.w * f) / 2, base.h * f),
-    }
-  }, [base, zoom])
-
-  if (!icon) return null
-  return <Marker position={{ lat: place.lat, lng: place.lng }} icon={icon} onClick={() => onSelect(place)} />
+// 클러스터(묶음) 표시 — 오렌지 원 + 개수
+function clusterIconUrl(count, size) {
+  const svg =
+    `<svg xmlns='http://www.w3.org/2000/svg' width='${size}' height='${size}'>` +
+    `<circle cx='${size / 2}' cy='${size / 2}' r='${size / 2 - 4}' fill='#e8562c' stroke='#fff' stroke-width='3'/>` +
+    `<circle cx='${size / 2}' cy='${size / 2}' r='${size / 2 - 4}' fill='none' stroke='rgba(0,0,0,.08)' stroke-width='1'/>` +
+    `</svg>`
+  return 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg)
 }
 
-// 장소가 처음 로드되면 지도를 그 장소들에 맞춰 한 번 이동
+const clusterRenderer = {
+  render({ count, position }) {
+    const size = count < 10 ? 42 : count < 100 ? 50 : 58
+    return new window.google.maps.Marker({
+      position,
+      icon: {
+        url: clusterIconUrl(count, size),
+        scaledSize: new window.google.maps.Size(size, size),
+        anchor: new window.google.maps.Point(size / 2, size / 2),
+      },
+      label: { text: String(count), color: '#fff', fontSize: '14px', fontWeight: '800' },
+      zIndex: 10000 + count,
+    })
+  },
+}
+
+// 마커 + 클러스터러 (명령형 관리)
+function Markers({ places, onSelect, zoom }) {
+  const map = useMap('main')
+  const { resolveMember } = usePlaces()
+  const clustererRef = useRef(null)
+  const markersRef = useRef([]) // [{ marker, base }]
+
+  // places 바뀌면 마커/클러스터 재생성
+  useEffect(() => {
+    if (!map) return
+    let cancelled = false
+    ;(async () => {
+      const built = await Promise.all(
+        places.map(async (p) => ({ place: p, base: await buildMarkerBase(p, resolveMember) })),
+      )
+      if (cancelled) return
+      if (clustererRef.current) clustererRef.current.setMap(null)
+      markersRef.current.forEach(({ marker }) => marker.setMap(null))
+
+      const f = zoomFactor(zoom)
+      const items = built.map(({ place, base }) => {
+        const marker = new window.google.maps.Marker({
+          position: { lat: place.lat, lng: place.lng },
+          icon: {
+            url: base.url,
+            scaledSize: new window.google.maps.Size(base.w * f, base.h * f),
+            anchor: new window.google.maps.Point((base.w * f) / 2, base.h * f),
+          },
+        })
+        marker.addListener('click', () => onSelect(place))
+        return { marker, base }
+      })
+      markersRef.current = items
+      clustererRef.current = new MarkerClusterer({
+        map,
+        markers: items.map((i) => i.marker),
+        renderer: clusterRenderer,
+      })
+    })()
+    return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [map, places])
+
+  // 줌 바뀌면 개별 마커 크기만 재계산
+  useEffect(() => {
+    const f = zoomFactor(zoom)
+    markersRef.current.forEach(({ marker, base }) => {
+      marker.setIcon({
+        url: base.url,
+        scaledSize: new window.google.maps.Size(base.w * f, base.h * f),
+        anchor: new window.google.maps.Point((base.w * f) / 2, base.h * f),
+      })
+    })
+  }, [zoom])
+
+  // 언마운트 정리
+  useEffect(() => () => {
+    if (clustererRef.current) clustererRef.current.setMap(null)
+    markersRef.current.forEach(({ marker }) => marker.setMap(null))
+  }, [])
+
+  return null
+}
+
 function FitPlaces({ places }) {
   const map = useMap('main')
   const done = useRef(false)
@@ -188,14 +244,11 @@ export default function MapView({ onSelect }) {
         clickableIcons={false}
         style={{ width: '100%', height: '100%' }}
         onCameraChanged={(ev) => {
-          // 반 레벨 단위로만 반영해 리렌더 최소화
           const z = Math.round(ev.detail.zoom * 2) / 2
           setZoom((prev) => (prev === z ? prev : z))
         }}
       >
-        {loaded && places.map((p) => (
-          <PlaceMarker key={p.id} place={p} onSelect={onSelect} zoom={zoom} />
-        ))}
+        {loaded && <Markers places={places} onSelect={onSelect} zoom={zoom} />}
         <FitPlaces places={places} />
       </Map>
       <LocateButton />

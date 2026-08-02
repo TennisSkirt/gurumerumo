@@ -66,6 +66,8 @@ button { font-family: inherit; cursor: pointer; }
   border: none; background: #fff; box-shadow: var(--shadow);
   font-size: 20px;
 }
+/* 내 위치 버튼: 구글 줌 컨트롤(오른쪽 아래)과 겹치지 않게 오른쪽 위로 */
+.map-fab.locate { top: 12px; right: 12px; bottom: auto; }
 .map-empty {
   position: absolute; z-index: 900; inset: 0;
   display: flex; align-items: center; justify-content: center;

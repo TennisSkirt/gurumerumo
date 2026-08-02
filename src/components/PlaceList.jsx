@@ -1,24 +1,45 @@
 import { useMemo, useState } from 'react'
 import { CATEGORIES, categoryOf } from '../lib/categories.js'
-import { latestVisit, latestRating, placePhoto, visitCount, participantsOf } from '../lib/places.js'
+import { latestVisit, latestRating, placePhoto, visitCount, participantsOf, visitsOf } from '../lib/places.js'
 import { CatIcon, MemberAvatar, UiIcon } from './Icon.jsx'
 import StarRating from './StarRating.jsx'
+import { uiIconSrc } from '../lib/asset.js'
 import { usePlaces } from '../store/PlacesContext.jsx'
 
 export default function PlaceList({ onSelect }) {
   const { places, resolveMember, t } = usePlaces()
   const [cat, setCat] = useState('all')
   const [minStar, setMinStar] = useState(0)
+  const [q, setQ] = useState('')
 
   const filtered = useMemo(() => {
+    const kw = q.trim().toLowerCase()
     return places
       .filter((p) => (cat === 'all' ? true : p.category === cat))
       .filter((p) => latestRating(p) >= minStar)
-  }, [places, cat, minStar])
+      .filter((p) => {
+        if (!kw) return true
+        if (p.name.toLowerCase().includes(kw)) return true
+        return visitsOf(p).some((v) => (v.memo || '').toLowerCase().includes(kw))
+      })
+  }, [places, cat, minStar, q])
 
   return (
     <div className="list">
       <h2 className="screen-title">{t('우리가족 기록', '家族の記録')} {places.length > 0 && <span className="count">{places.length}</span>}</h2>
+
+      <div className="list-search">
+        <img className="list-search__ic" src={uiIconSrc('search')} alt="" width={18} height={18} />
+        <input
+          type="search"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder={t('이름·메모로 검색', '名前・メモで検索')}
+        />
+        {q && (
+          <button className="list-search__x" onClick={() => setQ('')} aria-label={t('지우기', 'クリア')}>×</button>
+        )}
+      </div>
 
       <div className="filters">
         <div className="chips">
@@ -45,7 +66,11 @@ export default function PlaceList({ onSelect }) {
       </div>
 
       {filtered.length === 0 ? (
-        <div className="empty-note">{t('조건에 맞는 장소가 없어요.', '条件に合う場所がありません。')}</div>
+        <div className="empty-note">
+          {q.trim()
+            ? t(`'${q.trim()}' 검색 결과가 없어요.`, `「${q.trim()}」の検索結果がありません。`)
+            : t('조건에 맞는 장소가 없어요.', '条件に合う場所がありません。')}
+        </div>
       ) : (
         <ul className="cards">
           {filtered.map((p) => {

@@ -14,7 +14,10 @@ function todayStr() {
 }
 
 function VisitForm({ place, initial, onDone, onCancel }) {
-  const { addVisit, updateVisit, me, members, t } = usePlaces()
+  const { addVisit, updateVisit, updatePlace, me, members, t } = usePlaces()
+  const editing = Boolean(initial)
+  const [name, setName] = useState(place.name)
+  const [category, setCategory] = useState(place.category)
   const [rating, setRating] = useState(initial?.rating || 0)
   const [photos, setPhotos] = useState(initial ? visitPhotos(initial) : [])
   const [visitedAt, setVisitedAt] = useState(initial?.visitedAt || todayStr())
@@ -38,12 +41,17 @@ function VisitForm({ place, initial, onDone, onCancel }) {
   const removePhoto = (i) => setPhotos((prev) => prev.filter((_, idx) => idx !== i))
 
   const submit = async () => {
+    if (editing && !name.trim()) { alert(t('장소 이름을 입력해주세요.', '場所の名前を入力してください。')); return }
     if (participants.length === 0) { alert(t('누가 갔는지 골라주세요.', '誰が行ったか選んでください。')); return }
     setSaving(true)
     try {
-      const data = { rating, photos, visitedAt, memo: memo.trim(), participants }
-      if (initial) await updateVisit(place, initial.createdAt, data)
-      else await addVisit(place, data)
+      if (editing) {
+        // 장소(이름·카테고리) + 이 방문을 한 번에 저장. photo:null 로 레거시 단일사진 필드 확실히 제거.
+        await updatePlace(place.id, { name: name.trim(), category })
+        await updateVisit(place, initial.createdAt, { rating, photos, photo: null, visitedAt, memo: memo.trim(), participants })
+      } else {
+        await addVisit(place, { rating, photos, visitedAt, memo: memo.trim(), participants })
+      }
       onDone()
     } catch (e) {
       console.error(e); alert(t('저장 중 문제가 생겼어요.', '保存中に問題が発生しました。')); setSaving(false)
@@ -52,6 +60,27 @@ function VisitForm({ place, initial, onDone, onCancel }) {
 
   return (
     <div className="visit-form">
+      {editing && (
+        <>
+          <label className="field">
+            <span>{t('장소 이름', '場所の名前')} <em className="hint-inline">{t('모든 방문 공통', '全訪問共通')}</em></span>
+            <input value={name} onChange={(e) => setName(e.target.value)} />
+          </label>
+          <div className="field">
+            <span>{t('카테고리', 'カテゴリー')}</span>
+            <div className="chips">
+              {CATEGORIES.map((cc) => (
+                <button type="button" key={cc.id}
+                  className={'chip' + (category === cc.id ? ' on' : '')}
+                  style={category === cc.id ? { '--chip': cc.color } : undefined}
+                  onClick={() => setCategory(cc.id)}>
+                  <CatIcon category={cc.id} size={20} className="chip__ic" />{t(cc.label, cc.ja)}
+                </button>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
       <label className="field">
         <span>{t('방문일', '訪問日')}</span>
         <input type="date" value={visitedAt} onChange={(e) => setVisitedAt(e.target.value)} />
@@ -100,44 +129,6 @@ function VisitForm({ place, initial, onDone, onCancel }) {
   )
 }
 
-function PlaceEditForm({ place, onDone, onCancel }) {
-  const { updatePlace, t } = usePlaces()
-  const [name, setName] = useState(place.name)
-  const [category, setCategory] = useState(place.category)
-  const [saving, setSaving] = useState(false)
-  const save = async () => {
-    if (!name.trim()) { alert(t('이름을 입력해주세요.', '名前を入力してください。')); return }
-    setSaving(true)
-    try { await updatePlace(place.id, { name: name.trim(), category }); onDone() }
-    catch (e) { console.error(e); alert(t('저장 중 문제가 생겼어요.', '保存中に問題が発生しました。')); setSaving(false) }
-  }
-  return (
-    <div className="visit-form">
-      <label className="field">
-        <span>{t('장소 이름', '場所の名前')}</span>
-        <input value={name} onChange={(e) => setName(e.target.value)} />
-      </label>
-      <div className="field">
-        <span>{t('카테고리', 'カテゴリー')}</span>
-        <div className="chips">
-          {CATEGORIES.map((c) => (
-            <button type="button" key={c.id}
-              className={'chip' + (category === c.id ? ' on' : '')}
-              style={category === c.id ? { '--chip': c.color } : undefined}
-              onClick={() => setCategory(c.id)}>
-              <CatIcon category={c.id} size={20} className="chip__ic" />{t(c.label, c.ja)}
-            </button>
-          ))}
-        </div>
-      </div>
-      <div className="sheet__actions">
-        <button className="ghost" onClick={onCancel}>{t('취소', 'キャンセル')}</button>
-        <button className="primary" onClick={save} disabled={saving}>{saving ? t('저장 중…', '保存中…') : t('수정 저장', '変更を保存')}</button>
-      </div>
-    </div>
-  )
-}
-
 function CommentForm({ place }) {
   const { addComment, me, members, t } = usePlaces()
   const [message, setMessage] = useState('')
@@ -179,7 +170,6 @@ export default function PlaceDetail({ place, onClose }) {
   const { places, deletePlace, deleteVisit, deleteComment, resolveMember, t } = usePlaces()
   const { dragProps, sheetStyle } = useSheetDrag(onClose)
   const [adding, setAdding] = useState(false)
-  const [editingPlace, setEditingPlace] = useState(false)
   const [editVisit, setEditVisit] = useState(null)
   if (!place) return null
 
@@ -208,15 +198,10 @@ export default function PlaceDetail({ place, onClose }) {
         <div className="sheet__handle" {...dragProps}><div className="sheet__grab" /></div>
         {cover && <img className="sheet__photo" src={cover} alt="" />}
 
-        {editingPlace ? (
-          <PlaceEditForm place={live} onDone={() => setEditingPlace(false)} onCancel={() => setEditingPlace(false)} />
-        ) : (
-          <div className="sheet__head">
-            <h3>{live.name}</h3>
-            <span className="card__cat" style={{ background: c.color }}><CatIcon category={c.id} size={15} /> {t(c.label, c.ja)}</span>
-            <button className="icon-btn" onClick={() => setEditingPlace(true)} title={t('이름·카테고리 수정', '名前・カテゴリー編集')} aria-label={t('수정', '編集')}><UiIcon name="edit" size={20} /></button>
-          </div>
-        )}
+        <div className="sheet__head">
+          <h3>{live.name}</h3>
+          <span className="card__cat" style={{ background: c.color }}><CatIcon category={c.id} size={15} /> {t(c.label, c.ja)}</span>
+        </div>
 
         <div className="visit-hd">
           <b>{t('방문 이력', '訪問履歴')} {visits.length > 1 && <span className="count">{visits.length}</span>}</b>

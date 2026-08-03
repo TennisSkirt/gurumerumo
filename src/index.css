@@ -256,7 +256,7 @@ button.star { padding: 4px 5px; cursor: pointer; }  /* 입력용 별: 탭 영역
 .visit-form .field { margin: 0 0 14px; }
 .visit-form .field:last-of-type { margin-bottom: 14px; }
 .visit-form .sheet__actions { margin: 0; }
-.visit--editing { padding: 0; border: none; background: none; }
+.visit--editing { display: block; padding: 0; border: none; background: none; }
 
 /* 사진 여러 장 미리보기 그리드 */
 .photo-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }

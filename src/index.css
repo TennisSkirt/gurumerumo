@@ -317,6 +317,7 @@ button.star { padding: 4px 5px; cursor: pointer; }  /* 입력용 별: 탭 영역
 .usage__note { font-size: 13px; color: var(--ink-soft); margin: 8px 0 0; line-height: 1.5; }
 .usage__doc { margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--line); }
 .usage__warn { font-size: 13px; color: var(--brand); font-weight: 700; margin: 7px 0 0; line-height: 1.45; }
+.usage__caution { font-size: 13px; color: #b9791f; margin: 7px 0 0; line-height: 1.45; }
 .usage .hint-sm { margin-top: 10px; }
 .usage-chip { font-size: 12px; font-weight: 700; border-radius: 999px; padding: 3px 10px; }
 .usage-chip--ok { background: #e3f2e6; color: #3f8a52; }

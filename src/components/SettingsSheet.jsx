@@ -63,7 +63,7 @@ export default function SettingsSheet({ onClose }) {
               <p className="usage__note">
                 {t(`무료 저장 한도의 약 ${fmtPct(usage.freePct)}를 쓰고 있어요.`, `無料ストレージの約 ${fmtPct(usage.freePct)} を使用中です。`)}
                 {' '}
-                {usage.nearFree
+                {usage.freeLevel === 'danger'
                   ? t('한도에 가까워요 — 오래된 사진을 정리해보세요.', '上限に近づいています — 古い写真を整理しましょう。')
                   : t('아직 아주 넉넉해서 요금 걱정은 없어요.', 'まだ十分に余裕があり、料金の心配はありません。')}
               </p>
@@ -75,10 +75,13 @@ export default function SettingsSheet({ onClose }) {
                     <span>{fmtBytes(usage.largestSize)} <em>/ 1 MB</em></span>
                   </div>
                   <div className="usage__bar usage__bar--sm">
-                    <span className={'usage__fill usage__fill--' + (usage.nearDoc ? 'danger' : usage.largestPct >= 0.5 ? 'warn' : 'ok')} style={{ width: `${Math.min(100, Math.max(2, usage.largestPct * 100))}%` }} />
+                    <span className={'usage__fill usage__fill--' + usage.docLevel} style={{ width: `${Math.min(100, Math.max(2, usage.largestPct * 100))}%` }} />
                   </div>
-                  {usage.nearDoc && (
-                    <p className="usage__warn">⚠️ {t('이 기록은 사진이 많아 한 기록 한도(1MB)에 곧 닿아요. 사진을 줄이거나 새 기록으로 나눠주세요.', 'この記録は写真が多く、1記録の上限(1MB)に近づいています。写真を減らすか、記録を分けてください。')}</p>
+                  {usage.docLevel === 'danger' && (
+                    <p className="usage__warn">⚠️ {t('이 기록이 한 기록 한도(1MB)에 거의 찼어요. 여기에 사진·방문을 더 넣으면 저장이 안 될 수 있어요. 사진을 몇 장 지우면 여유가 생겨요.', 'この記録が上限(1MB)にほぼ達しました。これ以上写真・訪問を追加すると保存できないことがあります。写真を数枚消すと余裕ができます。')}</p>
+                  )}
+                  {usage.docLevel === 'warn' && (
+                    <p className="usage__caution">{t('이 기록에 사진이 꽤 쌓였어요. 한 기록은 최대 1MB라, 사진을 너무 많이 넣으면 나중에 더 저장이 안 될 수 있어요. 지금은 괜찮아요.', 'この記録は写真が増えています。1記録は最大1MBなので、入れすぎると後で保存できなくなることがあります。今は大丈夫です。')}</p>
                   )}
                 </div>
               )}

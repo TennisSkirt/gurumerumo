@@ -30,16 +30,18 @@ export function storageUsage(places = []) {
   }
   const freePct = FREE_TIER ? total / FREE_TIER : 0
   const largestPct = DOC_LIMIT ? largestSize / DOC_LIMIT : 0
-  const nearFree = freePct >= 0.8
-  const nearDoc = largestPct >= 0.8
+  // 단계: ok(여유) < warn(주의) < danger(경고)
+  const rank = (pct) => (pct >= 0.9 ? 'danger' : pct >= 0.72 ? 'warn' : 'ok')
+  const docLevel = rank(largestPct)
+  const freeLevel = rank(freePct)
+  const level = ['danger', 'warn', 'ok'].find((l) => l === docLevel || l === freeLevel)
   return {
     total, photos, count: places.length,
-    freeTier: FREE_TIER, freePct,
-    docLimit: DOC_LIMIT, largest, largestSize, largestPct,
-    nearFree, nearDoc,
-    warn: nearFree || nearDoc,
-    // 상태: 여유 / 주의 / 경고
-    level: nearFree || nearDoc ? 'danger' : (freePct >= 0.5 || largestPct >= 0.5 ? 'warn' : 'ok'),
+    freeTier: FREE_TIER, freePct, freeLevel,
+    docLimit: DOC_LIMIT, largest, largestSize, largestPct, docLevel,
+    level,
+    // 톱니 경고 점은 실제 위험(90%↑)에서만
+    warn: docLevel === 'danger' || freeLevel === 'danger',
   }
 }
 

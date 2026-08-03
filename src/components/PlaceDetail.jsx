@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { CATEGORIES, categoryOf } from '../lib/categories.js'
 import { sortedVisits, participantsOf, visitPhotos } from '../lib/places.js'
-import { compressImage } from '../lib/image.js'
 import { CatIcon, MemberAvatar, UiIcon } from './Icon.jsx'
+import { usePhotoUpload } from './PhotoEditor.jsx'
 import StarRating from './StarRating.jsx'
 import { useSheetDrag } from '../lib/useSheetDrag.js'
 import { usePlaces } from '../store/PlacesContext.jsx'
@@ -29,15 +29,7 @@ function VisitForm({ place, initial, onDone, onCancel }) {
 
   const toggleWho = (id) =>
     setParticipants((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
-  const onPhotos = async (e) => {
-    const files = [...(e.target.files || [])]
-    if (!files.length) return
-    try {
-      const imgs = await Promise.all(files.map((f) => compressImage(f)))
-      setPhotos((prev) => [...prev, ...imgs].slice(0, 10))
-    } catch { alert(t('사진을 불러오지 못했어요.', '写真を読み込めませんでした。')) }
-    e.target.value = ''
-  }
+  const { onFileInput, editorNode } = usePhotoUpload((d) => setPhotos((prev) => [...prev, d].slice(0, 10)))
   const removePhoto = (i) => setPhotos((prev) => prev.filter((_, idx) => idx !== i))
 
   const submit = async () => {
@@ -90,8 +82,8 @@ function VisitForm({ place, initial, onDone, onCancel }) {
         <StarRating value={rating} onChange={setRating} size={40} />
       </div>
       <div className="field">
-        <span>{t('사진', '写真')} <em className="hint-inline">{t('여러 장 가능', '複数枚OK')}</em></span>
-        <input type="file" accept="image/*" multiple onChange={onPhotos} />
+        <span>{t('사진', '写真')} <em className="hint-inline">{t('여러 장 가능 · 회전·자르기', '複数枚OK・回転/切り抜き')}</em></span>
+        <input type="file" accept="image/*" multiple onChange={onFileInput} />
         {photos.length > 0 && (
           <div className="photo-grid">
             {photos.map((p, i) => (
@@ -103,6 +95,7 @@ function VisitForm({ place, initial, onDone, onCancel }) {
           </div>
         )}
       </div>
+      {editorNode}
       <div className="field">
         <span>{t('누가 갔나요?', '誰が行きましたか？')} <em className="hint-inline">{t('같이 가면 둘 다', '一緒なら両方')}</em></span>
         <div className="chips">
@@ -135,10 +128,7 @@ function CommentForm({ place }) {
   const [photo, setPhoto] = useState(null)
   const [author, setAuthor] = useState(me || members[0]?.id)
   const [saving, setSaving] = useState(false)
-  const onPhoto = async (e) => {
-    const f = e.target.files?.[0]; if (!f) return
-    try { setPhoto(await compressImage(f)) } catch { alert(t('사진을 불러오지 못했어요.', '写真を読み込めませんでした。')) }
-  }
+  const { onFileInput, editorNode } = usePhotoUpload((d) => setPhoto(d))
   const submit = async () => {
     if (!message.trim() && !photo) { alert(t('메시지나 사진을 남겨주세요.', 'メッセージか写真を残してください。')); return }
     setSaving(true)
@@ -159,9 +149,10 @@ function CommentForm({ place }) {
       <textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={2} placeholder={t('코멘트를 남겨보세요 :)', 'コメントを残そう :)')} />
       {photo && <div className="photo-grid"><div className="photo-thumb"><img src={photo} alt="" /><button type="button" className="photo-x" onClick={() => setPhoto(null)}>×</button></div></div>}
       <div className="comment-form__row">
-        <label className="mini-file"><UiIcon name="camera" size={17} /> {t('사진', '写真')}<input type="file" accept="image/*" onChange={onPhoto} hidden /></label>
+        <label className="mini-file"><UiIcon name="camera" size={17} /> {t('사진', '写真')}<input type="file" accept="image/*" onChange={onFileInput} hidden /></label>
         <button className="primary" onClick={submit} disabled={saving}>{saving ? '…' : t('남기기', '投稿')}</button>
       </div>
+      {editorNode}
     </div>
   )
 }

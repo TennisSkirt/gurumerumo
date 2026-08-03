@@ -2,8 +2,8 @@ import { useState } from 'react'
 import LocationPicker from './LocationPicker.jsx'
 import StarRating from './StarRating.jsx'
 import { CatIcon, MemberAvatar } from './Icon.jsx'
+import { usePhotoUpload } from './PhotoEditor.jsx'
 import { CATEGORIES } from '../lib/categories.js'
-import { compressImage } from '../lib/image.js'
 import { usePlaces } from '../store/PlacesContext.jsx'
 
 function todayStr() {
@@ -28,15 +28,7 @@ export default function RecordForm({ onDone }) {
   const toggleWho = (id) =>
     setParticipants((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
 
-  const onPhotos = async (e) => {
-    const files = [...(e.target.files || [])]
-    if (!files.length) return
-    try {
-      const imgs = await Promise.all(files.map((f) => compressImage(f)))
-      setPhotos((prev) => [...prev, ...imgs].slice(0, 10))
-    } catch { alert(t('사진을 불러오지 못했어요.', '写真を読み込めませんでした。')) }
-    e.target.value = ''
-  }
+  const { onFileInput, editorNode } = usePhotoUpload((d) => setPhotos((prev) => [...prev, d].slice(0, 10)))
   const removePhoto = (i) => setPhotos((prev) => prev.filter((_, idx) => idx !== i))
 
   const canSave = name.trim() && coords && participants.length > 0 && !saving
@@ -94,8 +86,8 @@ export default function RecordForm({ onDone }) {
       </div>
 
       <div className="field">
-        <span>{t('사진', '写真')} <em className="hint-inline">{t('여러 장 가능', '複数枚OK')}</em></span>
-        <input type="file" accept="image/*" multiple onChange={onPhotos} />
+        <span>{t('사진', '写真')} <em className="hint-inline">{t('여러 장 가능 · 회전·자르기', '複数枚OK・回転/切り抜き')}</em></span>
+        <input type="file" accept="image/*" multiple onChange={onFileInput} />
         {photos.length > 0 && (
           <div className="photo-grid">
             {photos.map((p, i) => (
@@ -135,6 +127,7 @@ export default function RecordForm({ onDone }) {
       <button className="save-btn" type="submit" disabled={!canSave}>
         {saving ? t('저장 중…', '保存中…') : t('이 장소 기록하기', 'この場所を記録する')}
       </button>
+      {editorNode}
     </form>
   )
 }

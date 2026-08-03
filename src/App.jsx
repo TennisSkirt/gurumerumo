@@ -2,13 +2,13 @@ import { useMemo, useState } from 'react'
 import MapView from './components/MapView.jsx'
 import RecordForm from './components/RecordForm.jsx'
 import PlaceList from './components/PlaceList.jsx'
-import FamilyPage from './components/FamilyPage.jsx'
+import WishlistPage from './components/WishlistPage.jsx'
 import PlaceDetail from './components/PlaceDetail.jsx'
 import FamilyCodeScreen from './components/FamilyCodeScreen.jsx'
 import SettingsSheet from './components/SettingsSheet.jsx'
 import Splash from './components/Splash.jsx'
 import { UiIcon } from './components/Icon.jsx'
-import { tabIconSrc, characterSrc } from './lib/asset.js'
+import { tabIconSrc, uiIconSrc, characterSrc } from './lib/asset.js'
 import { storageUsage } from './lib/usage.js'
 import { usePlaces } from './store/PlacesContext.jsx'
 
@@ -16,7 +16,7 @@ const TABS = [
   { id: 'map', ko: '지도', ja: '地図' },
   { id: 'record', ko: '기록', ja: '記録' },
   { id: 'list', ko: '목록', ja: '一覧' },
-  { id: 'family', ko: '가족', ja: '家族' },
+  { id: 'wish', ko: '위시리스트', ja: 'ウィッシュ' },
 ]
 
 export default function App() {
@@ -43,10 +43,10 @@ export default function App() {
       </header>
 
       <main className="screen">
-        {tab === 'map' && <MapView onSelect={setSelected} />}
+        {tab === 'map' && <MapView onSelect={setSelected} onWishClick={() => setTab('wish')} />}
         {tab === 'record' && <RecordForm onDone={() => setTab('map')} />}
         {tab === 'list' && <PlaceList onSelect={setSelected} />}
-        {tab === 'family' && <FamilyPage onSelect={setSelected} onOpenSettings={() => setShowSettings(true)} />}
+        {tab === 'wish' && <WishlistPage />}
       </main>
 
       <nav className="tabbar">
@@ -56,7 +56,7 @@ export default function App() {
             className={'tabbar__btn' + (tab === tb.id ? ' on' : '')}
             onClick={() => setTab(tb.id)}
           >
-            <img className="tabbar__ic" src={tabIconSrc(tb.id, tab === tb.id)} alt="" width={28} height={28} />
+            <img className={'tabbar__ic' + (tb.id === 'wish' ? ' tabbar__ic--tint' : '')} src={tb.id === 'wish' ? uiIconSrc('star') : tabIconSrc(tb.id, tab === tb.id)} alt="" width={28} height={28} />
             <span className="tabbar__label">{t(tb.ko, tb.ja)}</span>
           </button>
         ))}

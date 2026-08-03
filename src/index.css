@@ -338,6 +338,35 @@ button.star { padding: 4px 5px; cursor: pointer; }  /* 입력용 별: 탭 영역
 .link-btn { border: none; background: none; color: var(--brand); font-weight: 700; font-size: inherit; font-family: inherit; padding: 0; text-decoration: underline; cursor: pointer; }
 
 /* ── 가족 ── */
+/* ── 위시리스트(가고 싶은 곳) ── */
+.wishlist { padding: 0 16px 90px; }
+.wish-add-btn {
+  width: 100%; border: 1.5px dashed var(--brand); background: var(--brand-soft); color: var(--brand);
+  border-radius: 14px; padding: 13px; font-weight: 700; font-size: 15px; margin-bottom: 14px;
+}
+.wish-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.wish-card { display: flex; gap: 10px; background: var(--card); border: 1.5px solid var(--line); border-radius: 14px; padding: 10px; align-items: flex-start; }
+.wish-card.is-busy { opacity: .5; }
+.wish-card__cat { flex: 0 0 auto; width: 46px; height: 46px; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
+.wish-card__body { flex: 1; min-width: 0; }
+.wish-card__name { font-size: 16px; }
+.wish-card__badge { font-size: 12px; font-weight: 700; margin-left: 6px; }
+.wish-card__memo { margin: 5px 0; font-size: 14px; color: var(--ink); white-space: pre-wrap; }
+.wish-card__who { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--ink-soft); margin-top: 4px; }
+.wish-card__acts { flex: 0 0 auto; display: flex; flex-direction: column; gap: 6px; align-items: stretch; }
+.wish-go { border: none; background: var(--brand); color: #fff; border-radius: 999px; padding: 7px 12px; font-size: 13px; font-weight: 700; white-space: nowrap; }
+.wish-go:disabled { opacity: .6; }
+.wish-del { border: none; background: none; color: var(--ink-soft); font-size: 20px; line-height: 1; padding: 2px 6px; align-self: flex-end; }
+
+/* 지도 필터(가봤/가고싶어) — 왼쪽 위 */
+.map-filter { position: absolute; top: 12px; left: 12px; z-index: 1000; display: flex; background: #fff; border-radius: 999px; box-shadow: var(--shadow); padding: 3px; }
+.map-filter button { border: none; background: none; color: var(--ink-soft); font-size: 12px; font-weight: 700; padding: 6px 11px; border-radius: 999px; }
+.map-filter button.on { background: var(--brand); color: #fff; }
+
+/* 위시 탭 임시 별 아이콘 — 비활성 시 흐리게 */
+.tabbar__ic--tint { opacity: .5; }
+.tabbar__btn.on .tabbar__ic--tint { opacity: 1; }
+
 .family { padding: 0 16px 24px; }
 .panel { background: var(--card); border: 1.5px solid var(--line); border-radius: 16px; padding: 14px; margin-bottom: 14px; box-shadow: var(--shadow); }
 .panel__title { font-weight: 700; margin-bottom: 10px; }

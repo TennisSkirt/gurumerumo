@@ -14,10 +14,17 @@ const PlacesContext = createContext(null)
 
 const LS = {
   places: 'gurumerumo.places',
+  wishes: 'gurumerumo.wishes',
   me: 'gurumerumo.me',
   code: 'gurumerumo.familyCode',
   members: 'gurumerumo.members',
   lang: 'gurumerumo.lang',
+}
+
+function todayStr() {
+  const d = new Date()
+  const p = (n) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`
 }
 
 function loadLocal(key, fallback) {
@@ -38,6 +45,7 @@ export function generateFamilyCode() {
 
 export function PlacesProvider({ children }) {
   const [places, setPlaces] = useState(() => loadLocal(LS.places, []))
+  const [wishes, setWishes] = useState(() => loadLocal(LS.wishes, []))
   const [me, setMeState] = useState(() => loadLocal(LS.me, null))
   const [familyCode, setFamilyCode] = useState(() => loadLocal(LS.code, null))
   const [members, setMembers] = useState(() => loadLocal(LS.members, DEFAULT_MEMBERS))
@@ -62,6 +70,9 @@ export function PlacesProvider({ children }) {
     if (!cloud) localStorage.setItem(LS.places, JSON.stringify(places))
   }, [places, cloud])
   useEffect(() => {
+    if (!cloud) localStorage.setItem(LS.wishes, JSON.stringify(wishes))
+  }, [wishes, cloud])
+  useEffect(() => {
     if (!cloud) localStorage.setItem(LS.members, JSON.stringify(members))
   }, [members, cloud])
 
@@ -76,6 +87,23 @@ export function PlacesProvider({ children }) {
       unsub = onSnapshot(q, (snap) => {
         setPlaces(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
       })
+    })()
+    return () => unsub()
+  }, [cloud, familyCode])
+
+  // 클라우드 모드: wishlist(가고 싶은 곳) 실시간 구독
+  useEffect(() => {
+    if (!cloud) return
+    let unsub = () => {}
+    ;(async () => {
+      const { collection, onSnapshot, query, orderBy } = await import('firebase/firestore')
+      const col = collection(db, 'places', familyCode, 'wishlist')
+      const q = query(col, orderBy('createdAt', 'desc'))
+      unsub = onSnapshot(
+        q,
+        (snap) => setWishes(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
+        () => {}, // 규칙 미허용/네트워크 오류 시 조용히
+      )
     })()
     return () => unsub()
   }, [cloud, familyCode])
@@ -209,6 +237,59 @@ export function PlacesProvider({ children }) {
     }
   }, [cloud, familyCode])
 
+  // ── 가고 싶은 곳(wishlist) ──
+  const addWish = useCallback(async (wish) => {
+    const entry = {
+      name: wish.name,
+      category: wish.category,
+      lat: wish.lat,
+      lng: wish.lng,
+      memo: wish.memo || '',
+      participants: wish.participants || [],
+      createdAt: Date.now(),
+    }
+    if (cloud) {
+      const { collection, addDoc } = await import('firebase/firestore')
+      await addDoc(collection(db, 'places', familyCode, 'wishlist'), entry)
+    } else {
+      setWishes((prev) => [{ id: crypto.randomUUID(), ...entry }, ...prev])
+    }
+  }, [cloud, familyCode])
+
+  const updateWish = useCallback(async (id, patch) => {
+    if (cloud) {
+      const { doc, updateDoc } = await import('firebase/firestore')
+      await updateDoc(doc(db, 'places', familyCode, 'wishlist', id), patch)
+    } else {
+      setWishes((prev) => prev.map((w) => (w.id === id ? { ...w, ...patch } : w)))
+    }
+  }, [cloud, familyCode])
+
+  const deleteWish = useCallback(async (id) => {
+    if (cloud) {
+      const { doc, deleteDoc } = await import('firebase/firestore')
+      await deleteDoc(doc(db, 'places', familyCode, 'wishlist', id))
+    } else {
+      setWishes((prev) => prev.filter((w) => w.id !== id))
+    }
+  }, [cloud, familyCode])
+
+  // "가봤어요" → 위시 항목을 실제 방문 기록(장소)으로 승격 후 위시에서 제거
+  const convertWish = useCallback(async (wish) => {
+    await addPlace({
+      name: wish.name,
+      category: wish.category,
+      lat: wish.lat,
+      lng: wish.lng,
+      participants: wish.participants || [],
+      visitedAt: todayStr(),
+      rating: 0,
+      photos: [],
+      memo: '',
+    })
+    await deleteWish(wish.id)
+  }, [addPlace, deleteWish])
+
   // 구성원 목록 통째로 저장(가족 문서에 공유). 설정 화면에서 편집 후 커밋.
   const saveMembers = useCallback(async (next) => {
     setMembers(next) // 즉시 반영(옵티미스틱)
@@ -233,16 +314,18 @@ export function PlacesProvider({ children }) {
   const leaveFamily = useCallback(() => {
     setFamilyCode(null)
     setPlaces(loadLocal(LS.places, []))
+    setWishes(loadLocal(LS.wishes, []))
     setMembers(loadLocal(LS.members, DEFAULT_MEMBERS))
   }, [])
 
   const value = {
-    places, me, familyCode, members,
+    places, wishes, me, familyCode, members,
     cloud, firebaseReady,
     lang, setLang, t,
     membersById, resolveMember, saveMembers,
     addPlace, addVisit, updateVisit, deleteVisit, updatePlace, deletePlace,
     addComment, deleteComment,
+    addWish, updateWish, deleteWish, convertWish,
     setMe, createFamily, joinFamily, leaveFamily,
     newMemberId,
   }

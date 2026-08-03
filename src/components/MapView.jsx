@@ -89,6 +89,47 @@ async function buildMarkerBase(place, resolveMember) {
   return { url: c.toDataURL('image/png'), w, h }
 }
 
+// 가고 싶은 곳 마커 — 흰 바탕 + 점선 카테고리색 테두리(계획 느낌) + 카테고리 아이콘. 얼굴 없음.
+async function buildWishBase(wish) {
+  const color = categoryOf(wish.category).color
+  const inner = 44, bd = 3, boxOuter = inner + bd * 2, tail = 9
+  const w = boxOuter
+  const h = boxOuter + tail
+  const cx = w / 2
+
+  const c = document.createElement('canvas')
+  c.width = w * SS; c.height = h * SS
+  const ctx = c.getContext('2d')
+  ctx.scale(SS, SS)
+  ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high'
+
+  // 흰 상자 + 꼬리 + 그림자
+  ctx.save()
+  ctx.shadowColor = 'rgba(0,0,0,.28)'; ctx.shadowBlur = 4; ctx.shadowOffsetY = 2
+  ctx.fillStyle = '#fff'
+  roundRect(ctx, 0, 0, boxOuter, boxOuter, 13); ctx.fill()
+  ctx.beginPath()
+  ctx.moveTo(cx - 7, boxOuter - 3); ctx.lineTo(cx + 7, boxOuter - 3); ctx.lineTo(cx, boxOuter + tail)
+  ctx.closePath(); ctx.fill()
+  ctx.restore()
+
+  // 점선 카테고리색 테두리
+  ctx.save()
+  ctx.strokeStyle = color; ctx.lineWidth = 2.5; ctx.setLineDash([5, 3])
+  roundRect(ctx, bd, bd, boxOuter - bd * 2, boxOuter - bd * 2, 11); ctx.stroke()
+  ctx.restore()
+
+  // 카테고리 아이콘
+  try {
+    const img = await loadImg(catIconSrc(wish.category))
+    const pad = 10, box = boxOuter - pad * 2
+    const s = Math.min(box / img.width, box / img.height)
+    ctx.drawImage(img, (boxOuter - img.width * s) / 2, (boxOuter - img.height * s) / 2, img.width * s, img.height * s)
+  } catch { /* 흰 상자만 */ }
+
+  return { url: c.toDataURL('image/png'), w, h }
+}
+
 function applyIcon(marker, base, zoom) {
   const f = zoomFactor(zoom)
   marker.setIcon({
@@ -176,6 +217,52 @@ function Markers({ places, onSelect, zoom }) {
   return null
 }
 
+// 가고 싶은 곳 마커 (클러스터 없이 개별 표시). 탭하면 위시리스트 탭으로 이동.
+function WishMarkers({ wishes, zoom, onWishClick }) {
+  const map = useMap('main')
+  const markers = useRef({})
+  const zoomRef = useRef(zoom)
+  const onClickRef = useRef(onWishClick)
+  zoomRef.current = zoom
+  onClickRef.current = onWishClick
+
+  useEffect(() => {
+    if (!map) return
+    const cur = markers.current
+    const ids = new Set(wishes.map((w) => w.id))
+    for (const id of Object.keys(cur)) {
+      if (!ids.has(id)) { cur[id].setMap(null); delete cur[id] }
+    }
+    for (const w of wishes) {
+      let m = cur[w.id]
+      if (!m) {
+        m = new window.google.maps.Marker({ position: { lat: w.lat, lng: w.lng }, title: w.name, zIndex: 5 })
+        m.addListener('click', () => onClickRef.current && onClickRef.current(m.__wish))
+        cur[w.id] = m
+      } else {
+        m.setPosition({ lat: w.lat, lng: w.lng })
+        m.setTitle(w.name)
+      }
+      m.__wish = w
+      m.setMap(map)
+      buildWishBase(w).then((base) => { m.__base = base; applyIcon(m, base, zoomRef.current) })
+    }
+  }, [wishes, map])
+
+  useEffect(() => {
+    for (const m of Object.values(markers.current)) {
+      if (m.__base) applyIcon(m, m.__base, zoom)
+    }
+  }, [zoom])
+
+  useEffect(() => () => {
+    for (const m of Object.values(markers.current)) m.setMap(null)
+    markers.current = {}
+  }, [])
+
+  return null
+}
+
 function FitPlaces({ places }) {
   const map = useMap('main')
   const done = useRef(false)
@@ -210,15 +297,19 @@ function LocateButton() {
   )
 }
 
-export default function MapView({ onSelect }) {
-  const { places, t } = usePlaces()
+export default function MapView({ onSelect, onWishClick }) {
+  const { places, wishes, t } = usePlaces()
   const loaded = useApiIsLoaded()
   const [zoom, setZoom] = useState(places.length ? 14 : 11)
+  const [filter, setFilter] = useState('all') // all | visited | wish
 
   const center = useMemo(
     () => (places.length ? { lat: places[0].lat, lng: places[0].lng } : SEOUL),
     [places],
   )
+
+  const showVisited = filter !== 'wish'
+  const showWish = filter !== 'visited'
 
   return (
     <div className="map-wrap">
@@ -236,13 +327,22 @@ export default function MapView({ onSelect }) {
           setZoom((prev) => (prev === z ? prev : z))
         }}
       >
-        {loaded && <Markers places={places} onSelect={onSelect} zoom={zoom} />}
+        {loaded && showVisited && <Markers places={places} onSelect={onSelect} zoom={zoom} />}
+        {loaded && showWish && <WishMarkers wishes={wishes} zoom={zoom} onWishClick={onWishClick} />}
         <FitPlaces places={places} />
       </Map>
       <LocateButton />
       <img className="map-mascot" src={characterSrc('husband')} alt="" />
 
-      {places.length === 0 && (
+      {wishes.length > 0 && (
+        <div className="map-filter">
+          <button className={filter === 'all' ? 'on' : ''} onClick={() => setFilter('all')}>{t('전체', 'すべて')}</button>
+          <button className={filter === 'visited' ? 'on' : ''} onClick={() => setFilter('visited')}>{t('가봤어요', '行った')}</button>
+          <button className={filter === 'wish' ? 'on' : ''} onClick={() => setFilter('wish')}>{t('가고싶어', '行きたい')}</button>
+        </div>
+      )}
+
+      {places.length === 0 && wishes.length === 0 && (
         <div className="map-empty">
           <div className="map-empty__card">
             <b>{t('아직 기록한 장소가 없어요', 'まだ記録した場所がありません')}</b>

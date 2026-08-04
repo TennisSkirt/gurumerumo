@@ -25,8 +25,8 @@ export const CONFIG = {
 
 export const firebaseReady = Boolean(CONFIG.apiKey)
 export const app = firebaseReady ? initializeApp(CONFIG) : null
-// WebChannel(스트리밍) 전송을 막는 네트워크(일부 회사/공용 와이파이, 인앱 브라우저)에서도
-// 안정적으로 동작하도록 long-polling 사용. 가족 앱 규모엔 성능 차이 무의미.
+// 전송 방식 자동 감지: 평소엔 WebChannel(빠르고 연결 안정적), WebChannel 이 막힌
+// 네트워크/인앱 브라우저에선 자동으로 long-polling 으로 폴백. (기존 강제 long-polling 대비 기동 빠름)
 export const db = firebaseReady
-  ? initializeFirestore(app, { experimentalForceLongPolling: true })
+  ? initializeFirestore(app, { experimentalAutoDetectLongPolling: true })
   : null

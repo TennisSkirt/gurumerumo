@@ -5,8 +5,8 @@ import { splashSrc } from '../lib/asset.js'
 export default function Splash({ onDone }) {
   const [out, setOut] = useState(false)
   useEffect(() => {
-    const t1 = setTimeout(() => setOut(true), 1700)
-    const t2 = setTimeout(() => onDone(), 2200)
+    const t1 = setTimeout(() => setOut(true), 700)
+    const t2 = setTimeout(() => onDone(), 1050)
     return () => { clearTimeout(t1); clearTimeout(t2) }
   }, [onDone])
   return (

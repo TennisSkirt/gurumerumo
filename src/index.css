@@ -55,6 +55,13 @@ button { font-family: inherit; cursor: pointer; }
 /* 화면 영역 */
 /* overflow-y:auto 만 주면 overflow-x 도 auto 로 계산돼 가로로 밀림 → 가로 잠금 */
 .screen { flex: 1 1 auto; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; position: relative; }
+
+/* 지연 로딩 대기 표시 */
+.app-loading, .tab-loading { display: flex; align-items: center; justify-content: center; }
+.app-loading { height: 100%; }
+.tab-loading { padding: 60px 0; }
+.spinner { width: 26px; height: 26px; border-radius: 50%; border: 3px solid var(--brand-soft); border-top-color: var(--brand); animation: spin .7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
 .screen-title {
   font-family: 'Jua', sans-serif;
   font-size: 20px; margin: 16px 16px 10px; color: var(--brand);

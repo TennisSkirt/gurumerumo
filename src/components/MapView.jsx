@@ -130,6 +130,22 @@ async function buildWishBase(wish) {
   return { url: c.toDataURL('image/png'), w, h }
 }
 
+// 마커 이미지 캐시 — 카테고리·얼굴·사진이 그대로면 캔버스 재합성 생략(스냅샷마다 전부 다시 안 그림)
+// ⚠️ 이 파일은 vis.gl 의 <Map> 을 import 하므로 전역 Map 이 가려짐 → 캐시는 일반 객체로.
+const baseCache = Object.create(null)
+function markerSig(place, resolveMember) {
+  const photo = placePhoto(place)
+  const fk = faceKeyFor(place, resolveMember) || 'none'
+  const pf = photo ? photo.length + ':' + photo.slice(-24) : 'none'
+  return `${place.category}|${fk}|${pf}`
+}
+function buildMarkerBaseCached(place, resolveMember) {
+  const sig = markerSig(place, resolveMember)
+  const hit = baseCache[sig]
+  if (hit) return Promise.resolve(hit)
+  return buildMarkerBase(place, resolveMember).then((base) => { baseCache[sig] = base; return base })
+}
+
 function applyIcon(marker, base, zoom) {
   const f = zoomFactor(zoom)
   marker.setIcon({
@@ -194,7 +210,7 @@ function Markers({ places, onSelect, zoom }) {
         m.setPosition({ lat: p.lat, lng: p.lng })
       }
       m.__place = p
-      buildMarkerBase(p, resolveMember).then((base) => { m.__base = base; applyIcon(m, base, zoomRef.current) })
+      buildMarkerBaseCached(p, resolveMember).then((base) => { m.__base = base; applyIcon(m, base, zoomRef.current) })
     }
     clusterer.current.clearMarkers()
     clusterer.current.addMarkers(Object.values(cur))

@@ -6,6 +6,20 @@ import { VitePWA } from 'vite-plugin-pwa'
 export default defineConfig({
   // GitHub Pages 프로젝트 사이트: https://tennisskirt.github.io/gurumerumo/
   base: '/gurumerumo/',
+  build: {
+    chunkSizeWarningLimit: 900,
+    rollupOptions: {
+      output: {
+        // 무거운 벤더를 별도 청크로 분리 → 병렬 다운로드 + 배포마다 앱코드만 바뀌어도 캐시 유지
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return
+          if (id.includes('firebase') || id.includes('@firebase') || id.includes('@grpc') || id.includes('protobufjs')) return 'firebase'
+          if (id.includes('@vis.gl') || id.includes('@googlemaps')) return 'maps'
+          if (id.includes('react-dom') || id.includes('/react/') || id.includes('scheduler')) return 'react'
+        },
+      },
+    },
+  },
   plugins: [
     react(),
     VitePWA({

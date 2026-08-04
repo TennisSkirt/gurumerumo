@@ -1,13 +1,14 @@
-import { useMemo, useState } from 'react'
+import { lazy, Suspense, useMemo, useState } from 'react'
 import MapView from './components/MapView.jsx'
-import RecordForm from './components/RecordForm.jsx'
-import PlaceList from './components/PlaceList.jsx'
-import WishlistPage from './components/WishlistPage.jsx'
-import PlaceDetail from './components/PlaceDetail.jsx'
-import FamilyCodeScreen from './components/FamilyCodeScreen.jsx'
-import SettingsSheet from './components/SettingsSheet.jsx'
 import Splash from './components/Splash.jsx'
 import { UiIcon } from './components/Icon.jsx'
+// 지도(첫 화면)를 뺀 나머지 화면은 처음 열 때만 로드 → 초기 번들 축소
+const RecordForm = lazy(() => import('./components/RecordForm.jsx'))
+const PlaceList = lazy(() => import('./components/PlaceList.jsx'))
+const WishlistPage = lazy(() => import('./components/WishlistPage.jsx'))
+const PlaceDetail = lazy(() => import('./components/PlaceDetail.jsx'))
+const FamilyCodeScreen = lazy(() => import('./components/FamilyCodeScreen.jsx'))
+const SettingsSheet = lazy(() => import('./components/SettingsSheet.jsx'))
 import { tabIconSrc, uiIconSrc, characterSrc } from './lib/asset.js'
 import { storageUsage } from './lib/usage.js'
 import { usePlaces } from './store/PlacesContext.jsx'
@@ -30,7 +31,9 @@ export default function App() {
   if (!splashDone) return <Splash onDone={() => setSplashDone(true)} />
 
   // 클라우드 모드인데 아직 가족 코드가 없으면 참여 화면
-  if (firebaseReady && !familyCode) return <FamilyCodeScreen />
+  if (firebaseReady && !familyCode) {
+    return <Suspense fallback={<div className="app-loading"><span className="spinner" /></div>}><FamilyCodeScreen /></Suspense>
+  }
 
   return (
     <div className="app">
@@ -44,9 +47,11 @@ export default function App() {
 
       <main className="screen">
         {tab === 'map' && <MapView onSelect={setSelected} onWishClick={() => setTab('wish')} />}
-        {tab === 'record' && <RecordForm onDone={() => setTab('map')} />}
-        {tab === 'list' && <PlaceList onSelect={setSelected} />}
-        {tab === 'wish' && <WishlistPage />}
+        <Suspense fallback={<div className="tab-loading"><span className="spinner" /></div>}>
+          {tab === 'record' && <RecordForm onDone={() => setTab('map')} />}
+          {tab === 'list' && <PlaceList onSelect={setSelected} />}
+          {tab === 'wish' && <WishlistPage />}
+        </Suspense>
       </main>
 
       <nav className="tabbar">
@@ -64,8 +69,10 @@ export default function App() {
 
       {tab === 'list' && <img className="list-mascot" src={characterSrc('wife')} alt="" />}
 
-      {selected && <PlaceDetail place={selected} onClose={() => setSelected(null)} />}
-      {showSettings && <SettingsSheet onClose={() => setShowSettings(false)} />}
+      <Suspense fallback={null}>
+        {selected && <PlaceDetail place={selected} onClose={() => setSelected(null)} />}
+        {showSettings && <SettingsSheet onClose={() => setShowSettings(false)} />}
+      </Suspense>
     </div>
   )
 }

@@ -11,9 +11,8 @@
 // CONFIG.apiKey 가 채워지면 자동으로 클라우드(가족 공유) 모드로 전환됩니다.
 // 비어 있으면 지금처럼 기기별 localStorage 로 동작합니다.
 // ─────────────────────────────────────────────────────────────
-import { initializeApp } from 'firebase/app'
-import { initializeFirestore } from 'firebase/firestore'
-
+// firebase SDK(~550KB)를 정적 import 하지 않고 **첫 클라우드 작업 때 지연 로드** → 초기 진입 번들 축소.
+// firebaseReady 는 config 검사뿐이라 SDK 없이 동기 판정 가능. db 는 getDb() 로 비동기 획득.
 export const CONFIG = {
   apiKey: 'AIzaSyA4JkbNMD6GxEMp1-4W9QJN8Lc4hFui7cg',
   authDomain: 'gurumerumo.firebaseapp.com',
@@ -24,9 +23,20 @@ export const CONFIG = {
 }
 
 export const firebaseReady = Boolean(CONFIG.apiKey)
-export const app = firebaseReady ? initializeApp(CONFIG) : null
-// 전송 방식 자동 감지: 평소엔 WebChannel(빠르고 연결 안정적), WebChannel 이 막힌
-// 네트워크/인앱 브라우저에선 자동으로 long-polling 으로 폴백. (기존 강제 long-polling 대비 기동 빠름)
-export const db = firebaseReady
-  ? initializeFirestore(app, { experimentalAutoDetectLongPolling: true })
-  : null
+
+let dbPromise = null
+// Firestore db 를 한 번만 초기화해 재사용. 전송 방식 자동 감지(평소 WebChannel, 막히면 long-polling 폴백).
+export function getDb() {
+  if (!firebaseReady) return Promise.resolve(null)
+  if (!dbPromise) {
+    dbPromise = (async () => {
+      const [{ initializeApp }, { initializeFirestore }] = await Promise.all([
+        import('firebase/app'),
+        import('firebase/firestore'),
+      ])
+      const app = initializeApp(CONFIG)
+      return initializeFirestore(app, { experimentalAutoDetectLongPolling: true })
+    })()
+  }
+  return dbPromise
+}

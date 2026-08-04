@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react'
-import { firebaseReady, db } from '../lib/firebase.js'
+import { firebaseReady, getDb } from '../lib/firebase.js'
 import { DEFAULT_MEMBERS, fallbackMember, newMemberId } from '../lib/members.js'
 import { visitsOf } from '../lib/places.js'
 
@@ -81,6 +81,7 @@ export function PlacesProvider({ children }) {
     if (!cloud) return
     let unsub = () => {}
     ;(async () => {
+      const db = await getDb()
       const { collection, onSnapshot, query, orderBy } = await import('firebase/firestore')
       const col = collection(db, 'places', familyCode, 'spots')
       const q = query(col, orderBy('createdAt', 'desc'))
@@ -96,6 +97,7 @@ export function PlacesProvider({ children }) {
     if (!cloud) return
     let unsub = () => {}
     ;(async () => {
+      const db = await getDb()
       const { collection, onSnapshot, query, orderBy } = await import('firebase/firestore')
       const col = collection(db, 'places', familyCode, 'wishlist')
       const q = query(col, orderBy('createdAt', 'desc'))
@@ -113,6 +115,7 @@ export function PlacesProvider({ children }) {
     if (!cloud) return
     let unsub = () => {}
     ;(async () => {
+      const db = await getDb()
       const { doc, onSnapshot } = await import('firebase/firestore')
       unsub = onSnapshot(
         doc(db, 'places', familyCode),
@@ -161,6 +164,7 @@ export function PlacesProvider({ children }) {
       comments: [],
     }
     if (cloud) {
+      const db = await getDb()
       const { collection, addDoc } = await import('firebase/firestore')
       await addDoc(collection(db, 'places', familyCode, 'spots'), entry)
     } else {
@@ -170,6 +174,7 @@ export function PlacesProvider({ children }) {
 
   const writeField = useCallback(async (placeId, field, value) => {
     if (cloud) {
+      const db = await getDb()
       const { doc, updateDoc } = await import('firebase/firestore')
       await updateDoc(doc(db, 'places', familyCode, 'spots', placeId), { [field]: value })
     } else {
@@ -221,6 +226,7 @@ export function PlacesProvider({ children }) {
 
   const updatePlace = useCallback(async (id, patch) => {
     if (cloud) {
+      const db = await getDb()
       const { doc, updateDoc } = await import('firebase/firestore')
       await updateDoc(doc(db, 'places', familyCode, 'spots', id), patch)
     } else {
@@ -230,6 +236,7 @@ export function PlacesProvider({ children }) {
 
   const deletePlace = useCallback(async (id) => {
     if (cloud) {
+      const db = await getDb()
       const { doc, deleteDoc } = await import('firebase/firestore')
       await deleteDoc(doc(db, 'places', familyCode, 'spots', id))
     } else {
@@ -249,6 +256,7 @@ export function PlacesProvider({ children }) {
       createdAt: Date.now(),
     }
     if (cloud) {
+      const db = await getDb()
       const { collection, addDoc } = await import('firebase/firestore')
       await addDoc(collection(db, 'places', familyCode, 'wishlist'), entry)
     } else {
@@ -258,6 +266,7 @@ export function PlacesProvider({ children }) {
 
   const updateWish = useCallback(async (id, patch) => {
     if (cloud) {
+      const db = await getDb()
       const { doc, updateDoc } = await import('firebase/firestore')
       await updateDoc(doc(db, 'places', familyCode, 'wishlist', id), patch)
     } else {
@@ -267,6 +276,7 @@ export function PlacesProvider({ children }) {
 
   const deleteWish = useCallback(async (id) => {
     if (cloud) {
+      const db = await getDb()
       const { doc, deleteDoc } = await import('firebase/firestore')
       await deleteDoc(doc(db, 'places', familyCode, 'wishlist', id))
     } else {
@@ -294,6 +304,7 @@ export function PlacesProvider({ children }) {
   const saveMembers = useCallback(async (next) => {
     setMembers(next) // 즉시 반영(옵티미스틱)
     if (cloud) {
+      const db = await getDb()
       const { doc, setDoc } = await import('firebase/firestore')
       await setDoc(doc(db, 'places', familyCode), { members: next }, { merge: true })
     }
